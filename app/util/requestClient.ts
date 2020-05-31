@@ -33,7 +33,14 @@ export default class RequestClient {
     }
 
     const body = res.data;
-    console.log(`body : ${JSON.stringify(body)}`);
+    if (body.errcode !== 0) {
+      console.log(`
+      ==================================================
+      ERROR REQUEST BODY : 
+      ${JSON.stringify(body)}
+      ==================================================
+      `);
+    }
     return body.data;
   }
 

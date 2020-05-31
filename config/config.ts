@@ -4,7 +4,7 @@ export enum Config {
   BASE_URL = 'https://api.weixin.qq.com',
   MY_TOKEN = '5f6f30b388ca0401',
   WARNING_TIMES = 1,
-  TIMEOUT = 300,
+  TIMEOUT = 90,
   MANAGER_SU = 'owRfxwoWHK_iwYZxuFmXFjF0vbqo',
   MANAGER_GAO = 'owRfxwrr-SCyLFGmCXBX8A_TzzoU',
 }

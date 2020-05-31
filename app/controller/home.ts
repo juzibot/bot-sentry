@@ -8,7 +8,6 @@ import { sendMessage } from './message';
 import { Config } from '../../config/config';
 import { Message, BotDingDongInfo } from '../util/schema';
 
-
 const MEMORY_CARD_NAME = 'bot-name';
 const memoryCard = new MemoryCard(MEMORY_CARD_NAME);
 memoryCard.load();
@@ -16,8 +15,8 @@ memoryCard.load();
 export default class HomeController extends Controller {
 
   public async check() {
-    console.log(`check(), time: ${new Date()}`);
-    const { ctx } = this;
+    const { ctx, logger } = this;
+    logger.info(`check(), time: ${new Date()}`);
     const query = ctx.query;
     const { signature, timestamp, nonce, echostr } = query;
     const str = [ timestamp, nonce, Config.MY_TOKEN ].sort().join('');
@@ -29,23 +28,26 @@ export default class HomeController extends Controller {
   }
 
   public async receiveMessage() {
-    console.log('receiveMessage()');
-    const { ctx } = this;
+    const { ctx, logger } = this;
+    logger.info('receiveMessage()');
     const xmlBody = ctx.request.body;
+
     const xmlObject = await xmlToJson(xmlBody);
     const message: Message = xmlObject.xml;
-    console.log(`receive message: ${util.inspect(message)}`);
 
     await this.warning();
-    await this.processMessage(message);
+    ctx.body = await this.processMessage(message);
   }
 
   private async processMessage(message: Message) {
-    // start ding
     if (message.MsgType === 'text' && message.Content.indexOf('#ding-start') !== -1) {
+      await sendMessage('#ding', message.FromUserName);
       setInterval(async () => {
         await sendMessage('#ding', message.FromUserName);
-      }, 10 * 1000);
+        const cacheObject = await memoryCard.get(message.FromUserName);
+        cacheObject.dingNum += 1;
+        await memoryCard.set(message.FromUserName, cacheObject);
+      }, 60 * 1000);
 
       const botId = message.Content.split('#')[0];
       const cacheObject: BotDingDongInfo = {
@@ -61,13 +63,7 @@ export default class HomeController extends Controller {
     } else if (message.MsgType === 'text' && message.Content.indexOf('#dong') !== -1) {
       const cacheObject = await memoryCard.get(message.FromUserName);
       if (!cacheObject) {
-        // TODO： without #ding-start command
-        /* cacheObject = {
-          botId,
-          startTime: message.CreateTime,
-          warningTimes: 0,
-        };
-        await memoryCard.set(message.FromUserName, cacheObject); */
+        throw new Error(`can not get memory for ${message.FromUserName}`)
       }
       cacheObject.dongNum += 1;
       cacheObject.responseTime = parseInt(message.CreateTime, 10);
@@ -80,43 +76,87 @@ export default class HomeController extends Controller {
   }
 
   public async warning() {
-    console.log('warning()');
+    const { logger } = this
+    logger.info('warning()');
+    logger.info(`
+    ===========================================
+    The bot length: ${await memoryCard.size}
+    ===========================================
+    `)
     for await (const key of memoryCard.keys()) {
       const cacheObject = await memoryCard.get(key);
-      console.log(`object: ${util.inspect(cacheObject)}`);
+      logger.info(`
+      =============================================
+      object: ${util.inspect(cacheObject)}
+      =============================================
+      `);
       const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
       const botId = cacheObject.botId;
-      if (cacheObject.warningTimes > Config.WARNING_TIMES) {
-        console.log(`This bot: ${botId} has already warned more than ${Config.WARNING_TIMES}, it will never warn any more.`);
+      if (cacheObject.warnNum >= Config.WARNING_TIMES) {
+        logger.info(`
+        ================================================================================================
+            This bot: ${botId} has already warned more than ${Config.WARNING_TIMES}, it will never warn any more.
+        ================================================================================================
+        `);
         return;
       }
-      if (flag > Config.TIMEOUT) {
-        console.log(`This bot: ${botId} has no longer response message.`);
+      if (cacheObject.responseTime && flag > Config.TIMEOUT) {
+        logger.info(`
+        ==============================================================
+          This bot: ${botId} has no response message, will warning now
+        ==============================================================
+        `);
         const warnMessage = this.warnMessage(cacheObject);
         sendMessage(warnMessage);
         // sendMessage(warnMessage, Config.MANAGER_GAO);
-        cacheObject.warningTimes += 1;
+        cacheObject.warnNum += 1;
         await memoryCard.set(key, cacheObject);
       }
     }
   }
 
   private warnMessage(cacheObject: BotDingDongInfo): string {
-    return `【Bot掉线通知】：${cacheObject.botId}
-    当前bot已经掉线，
-    登录时间：${cacheObject.startTime}
-    在线时长：${Math.floor(Date.now() / 1000) - cacheObject.startTime}
-    DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
+    return `【Bot掉线通知(${cacheObject.botId})】
+登录时间：${this.timeConverter(cacheObject.startTime)}
+离线时间：${this.timeConverter(cacheObject.responseTime)}
+在线时长：${this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime)}
+DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
+  }
+
+  private timeConverter(UNIX_timestamp: number){
+    var a = new Date(UNIX_timestamp * 1000);
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var year = a.getFullYear();
+    var month = months[a.getMonth()];
+    var date = a.getDate();
+    var hour = a.getHours();
+    var min = a.getMinutes();
+    var sec = a.getSeconds();
+    var time = date + ' ' + month + ' ' + year + ' ' + hour + ':' + min + ':' + sec ;
+    return time;
+  }
+
+  private secondsToDhms(seconds: number) {
+    var d = Math.floor(seconds / (3600*24));
+    var h = Math.floor(seconds % (3600*24) / 3600);
+    var m = Math.floor(seconds % 3600 / 60);
+    var s = Math.floor(seconds % 60);
+    
+    var dDisplay = d > 0 ? d + " D " : "";
+    var hDisplay = h > 0 ? h + " H " : "";
+    var mDisplay = m > 0 ? m + " M " : "";
+    var sDisplay = s > 0 ? s + " S" : "";
+    return dDisplay + hDisplay + mDisplay + sDisplay;
   }
 
   private responseMessage(message: Message, text: string): string {
     return `<xml>
-    <ToUserName><![CDATA[${message.FromUserName}]]></ToUserName>
-    <FromUserName><![CDATA[${message.ToUserName}]]></FromUserName>
-    <CreateTime>${Date.now()}</CreateTime>
-    <MsgType><![CDATA[text]]></MsgType>
-    <Content><![CDATA[${text}]]></Content>
-  </xml>`;
+      <ToUserName><![CDATA[${message.FromUserName}]]></ToUserName>
+      <FromUserName><![CDATA[${message.ToUserName}]]></FromUserName>
+      <CreateTime>${Date.now()}</CreateTime>
+      <MsgType><![CDATA[text]]></MsgType>
+      <Content><![CDATA[${text}]]></Content>
+    </xml>`;
   }
 
   private async ddrStatistic() {
@@ -126,7 +166,7 @@ export default class HomeController extends Controller {
       const cacheObject: BotDingDongInfo | undefined = await memoryCard.get(key);
       if (cacheObject) {
         flag = true;
-        ddrString += `bot id: ${cacheObject.botId}, ddr: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}% \n`;
+        ddrString += `ID: ${cacheObject.botId}, DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}% \n`;
       }
     }
 
