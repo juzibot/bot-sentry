@@ -28,9 +28,9 @@ export default (appInfo: EggAppInfo) => {
       depth: 5,
       parameterLimit: 1000,
     },
-    enableTypes: ['json', 'form', 'text'],
+    enableTypes: [ 'json', 'form', 'text' ],
     extendTypes: {
-      text: ['text/xml', 'application/xml'],
+      text: [ 'text/xml', 'application/xml' ],
     },
   };
   // 覆盖egg自带的配置

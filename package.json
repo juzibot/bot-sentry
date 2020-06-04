@@ -8,7 +8,7 @@
     "declarations": true
   },
   "scripts": {
-    "start": "egg-scripts start --daemon --title=egg-server-donut-monitor",
+    "start": "egg-scripts start --daemon --title=egg-server-donut-monitor --workers=1",
     "stop": "egg-scripts stop --title=egg-server-donut-monitor",
     "dev": "egg-bin dev",
     "debug": "egg-bin debug",
@@ -27,6 +27,7 @@
     "egg": "^2.6.1",
     "egg-scripts": "^2.6.0",
     "memory-card": "^0.6.21",
+    "moment": "^2.26.0",
     "node-cache": "^5.1.0",
     "xml2js": "^0.4.23"
   },
