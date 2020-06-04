@@ -1,5 +1,6 @@
 export interface BotDingDongInfo {
   botId: string;
+  botName: string;
   dingNum: number;
   dongNum: number;
   warnNum: number;

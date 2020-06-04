@@ -8,7 +8,7 @@
     "declarations": true
   },
   "scripts": {
-    "start": "egg-scripts start --daemon --title=egg-server-donut-monitor --workers=1",
+    "start": "egg-scripts start --workers=1 --daemon --title=egg-server-donut-monitor",
     "stop": "egg-scripts stop --title=egg-server-donut-monitor",
     "dev": "egg-bin dev",
     "debug": "egg-bin debug",

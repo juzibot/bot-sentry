@@ -1,11 +1,9 @@
 import { Controller } from 'egg';
 import crypto = require('crypto');
-import util = require('util');
 import moment = require('moment');
 
 import { MemoryCard } from 'memory-card';
 import { xmlToJson } from '../util/xmlToJson';
-import { sendMessage } from './message';
 import { Config } from '../../config/config';
 import { Message, BotDingDongInfo } from '../util/schema';
 
@@ -14,6 +12,7 @@ const memoryCard = new MemoryCard(MEMORY_CARD_NAME);
 memoryCard.load();
 
 export default class HomeController extends Controller {
+  public static memoryCard = memoryCard
 
   public async check() {
     const { ctx, logger } = this;
@@ -36,45 +35,45 @@ export default class HomeController extends Controller {
     const xmlObject = await xmlToJson(xmlBody);
     const message: Message = xmlObject.xml;
 
-    await this.warning();
     ctx.body = await this.processMessage(message);
   }
 
   private async processMessage(message: Message) {
     if (message.MsgType === 'text' && message.Content.indexOf('#ding-start') !== -1) {
-      await sendMessage('#ding', message.FromUserName);
-      setInterval(async () => {
-        await sendMessage('#ding', message.FromUserName);
-        const cacheObject = await memoryCard.get(message.FromUserName);
-        cacheObject.dingNum += 1;
-        await memoryCard.set(message.FromUserName, cacheObject);
-      }, 60 * 1000);
-
-      const botId = message.Content.split('#')[0];
+      const strArr = message.Content.split('#');
+      const botId = strArr[0]
+      let botName: string = ''
+      if (strArr.length === 3) {
+        botName = strArr[1]
+      }
 
       let cacheObject = await memoryCard.get(message.FromUserName)
+
       if (!cacheObject) {
         cacheObject = {
           botId,
+          botName,
           startTime: parseInt(message.CreateTime, 10),
           warnNum: 0,
-          dingNum: 1,
+          dingNum: 0,
           dongNum: 0,
           responseTime: 0,
         };
       } else {
-        const num = (parseInt(message.CreateTime, 10) - cacheObject.responseTime) / 60
+        const num = Math.floor((parseInt(message.CreateTime, 10) - cacheObject.responseTime) / 60)
         cacheObject = {
           botId,
+          botName,
           startTime: parseInt(message.CreateTime, 10),
           warnNum: 0,
-          dingNum: 1 + num,
+          dingNum: num,
           dongNum: 0,
           responseTime: 0,
         };
       }
-      await memoryCard.set(message.FromUserName, cacheObject);      
-      return this.responseMessage(message, '@received-ding-start-message');
+      await memoryCard.set(message.FromUserName, cacheObject);
+      const NOTICE_INFO = `Hi, bot maintainer! \n\nThe message from bot is send by wechaty-puppet-donut, our AIM is to monitor your bot login / logout status. \n\nPlease just ignore this conversation, if you have any question about wechaty, please contact with \n\n[WeChat Account]: botorange22 \n\nThank you very much!`
+      return this.responseMessage(message, NOTICE_INFO);
     } else if (message.MsgType === 'text' && message.Content.indexOf('#dong') !== -1) {
       const cacheObject = await memoryCard.get(message.FromUserName);
       if (!cacheObject) {
@@ -87,58 +86,24 @@ export default class HomeController extends Controller {
     } else if (message.MsgType === 'text' && message.Content.indexOf('#ddr') !== -1) {
       const ddrString = await this.ddrStatistic();
       return this.responseMessage(message, ddrString);
+    } else if (message.MsgType === 'text' && message.Content.indexOf('#dead') !== -1) {
+      const ddrString = await this.deadList();
+      return this.responseMessage(message, ddrString);
+    } else {
+      const commandInfo = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot'
+      return this.responseMessage(message, commandInfo);
     }
   }
 
-  public async warning() {
-    const { logger } = this;
-    logger.info('warning()');
-    logger.info(`
-    ===========================================
-    The bot length: ${await memoryCard.size}
-    ===========================================
-    `);
-    for await (const key of memoryCard.keys()) {
-      const cacheObject = await memoryCard.get(key);
-      logger.info(`
-      =============================================
-      object: ${util.inspect(cacheObject)}
-      =============================================
-      `);
-      const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
-      const botId = cacheObject.botId;
-      if (cacheObject.warnNum >= Config.WARNING_TIMES && flag > Config.TIMEOUT) {
-        logger.info(`
-        ================================================================================================
-            This bot: ${botId} has already warned more than ${Config.WARNING_TIMES}, it will never warn any more.
-        ================================================================================================
-        `);
-        return;
-      }
-      if (cacheObject.responseTime && flag > Config.TIMEOUT) {
-        logger.info(`
-        ==============================================================
-          This bot: ${botId} has no response message, will warning now
-        ==============================================================
-        `);
-        const warnMessage = this.warnMessage(cacheObject);
-        sendMessage(warnMessage);
-        // sendMessage(warnMessage, Config.MANAGER_GAO);
-        cacheObject.warnNum += 1;
-        await memoryCard.set(key, cacheObject);
-      }
-    }
-  }
-
-  private warnMessage(cacheObject: BotDingDongInfo): string {
-    return `【Bot掉线通知(${cacheObject.botId})】
-登录时间：${moment(cacheObject.startTime * 1000).format("YYYY MM DD hh:mm:ss")}
-离线时间：${moment(cacheObject.responseTime * 1000).format("YYYY MM DD hh:mm:ss")}
+  public static warnMessage(cacheObject: BotDingDongInfo): string {
+    return `【Bot掉线通知(${cacheObject.botName || cacheObject.botId})】
+登录时间：${moment(cacheObject.startTime * 1000).format("YYYY-MM-DD hh:mm:ss")}
+离线时间：${moment(cacheObject.responseTime * 1000).format("YYYY-MM-DD hh:mm:ss")}
 在线时长：${this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime)}
 DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
 
-  private secondsToDhms(seconds: number) {
+  public static secondsToDhms(seconds: number) {
     const d = Math.floor(seconds / (3600 * 24));
     const h = Math.floor(seconds % (3600 * 24) / 3600);
     const m = Math.floor(seconds % 3600 / 60);
@@ -162,16 +127,37 @@ DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
 
   private async ddrStatistic() {
-    let ddrString = 'DDR LIST: \n';
+    let ddrString = '【DDR LIST】 \n BotName/BotId \t DingNum \t DDR \n';
     let flag = false;
     for await (const key of memoryCard.keys()) {
       const cacheObject: BotDingDongInfo | undefined = await memoryCard.get(key);
       if (cacheObject) {
         flag = true;
-        ddrString += `ID: ${cacheObject.botId}, DING_NUM: ${cacheObject.dingNum}, DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}% \n`;
+        const ddr = cacheObject.dingNum === 0 ? '0.00' : (cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)
+        ddrString += `${cacheObject.botName || cacheObject.botId} \t ${cacheObject.dingNum} \t ${ddr}% \n`;
       }
     }
 
     return flag ? ddrString : 'No alive bot.';
+  }
+
+  private async deadList() {
+    let deadStr = '【DEAD LIST】 \n'
+    let deadList: string[] = []
+    const botNumber = await memoryCard.size
+    if (!botNumber) {
+      return 'No dead bot due to no active bot!'
+    }
+    for await (const key of memoryCard.keys()) {
+      const object = await memoryCard.get(key)
+      if (object && object.warnNum) {
+        deadList.push(object.botName || object.botId)
+      }
+    }
+    if (deadList.length) {
+      return deadStr + deadList.map(str => str + '\n').toString()
+    } else {
+      return 'No dead bot!'
+    }
   }
 }
