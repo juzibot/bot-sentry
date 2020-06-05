@@ -2,17 +2,12 @@ import { Controller } from 'egg';
 import crypto = require('crypto');
 import moment = require('moment');
 
-import { MemoryCard } from 'memory-card';
 import { xmlToJson } from '../util/xmlToJson';
 import { Config } from '../../config/config';
 import { Message, BotDingDongInfo } from '../util/schema';
 
-const MEMORY_CARD_NAME = 'bot-name';
-const memoryCard = new MemoryCard(MEMORY_CARD_NAME);
-memoryCard.load();
 
 export default class HomeController extends Controller {
-  public static memoryCard = memoryCard
 
   public async check() {
     const { ctx, logger } = this;
@@ -38,6 +33,28 @@ export default class HomeController extends Controller {
     ctx.body = await this.processMessage(message);
   }
 
+  public async allKeys(): Promise<string[]> {
+    return this.app.redis.keys('*') // RedisClient.allKeys()
+  }
+
+  public async getValue(key: string): Promise<any> {
+    const { logger, app } = this;
+    logger.info(`getValue(${key})`)
+    const objectStr = await app.redis.get(key)
+    console.log(`objectStr : ${objectStr}`)
+    if (objectStr) {
+      return JSON.parse(objectStr)
+    } else {
+      return null
+    }
+  }
+
+  public async setValue(key: string, value: any): Promise<void> {
+    const { logger, app } = this;
+    logger.info(`setValue(${key}, ${JSON.stringify(value)})`)
+    await app.redis.set(key, JSON.stringify(value))
+  }
+
   private async processMessage(message: Message) {
     if (message.MsgType === 'text' && message.Content.indexOf('#ding-start') !== -1) {
       const strArr = message.Content.split('#');
@@ -47,7 +64,7 @@ export default class HomeController extends Controller {
         botName = strArr[1]
       }
 
-      let cacheObject = await memoryCard.get(message.FromUserName)
+      let cacheObject = await this.getValue(message.FromUserName)
 
       if (!cacheObject) {
         cacheObject = {
@@ -60,7 +77,10 @@ export default class HomeController extends Controller {
           responseTime: 0,
         };
       } else {
-        const num = Math.floor((parseInt(message.CreateTime, 10) - cacheObject.responseTime) / 60)
+        let num = 0
+        if (cacheObject.responseTime) {
+          num = Math.floor((parseInt(message.CreateTime, 10) - cacheObject.responseTime) / 60)
+        }
         cacheObject = {
           botId,
           botName,
@@ -71,17 +91,17 @@ export default class HomeController extends Controller {
           responseTime: 0,
         };
       }
-      await memoryCard.set(message.FromUserName, cacheObject);
+      await this.setValue(message.FromUserName, cacheObject);
       const NOTICE_INFO = `Hi, bot maintainer! \n\nThe message from bot is send by wechaty-puppet-donut, our AIM is to monitor your bot login / logout status. \n\nPlease just ignore this conversation, if you have any question about wechaty, please contact with \n\n[WeChat Account]: botorange22 \n\nThank you very much!`
       return this.responseMessage(message, NOTICE_INFO);
     } else if (message.MsgType === 'text' && message.Content.indexOf('#dong') !== -1) {
-      const cacheObject = await memoryCard.get(message.FromUserName);
+      const cacheObject = await this.getValue(message.FromUserName);
       if (!cacheObject) {
         throw new Error(`can not get memory for ${message.FromUserName}`);
       }
       cacheObject.dongNum += 1;
       cacheObject.responseTime = parseInt(message.CreateTime, 10);
-      await memoryCard.set(message.FromUserName, cacheObject);
+      await this.setValue(message.FromUserName, cacheObject);
       return this.responseMessage(message, '@received-dong-message');
     } else if (message.MsgType === 'text' && message.Content.indexOf('#ddr') !== -1) {
       const ddrString = await this.ddrStatistic();
@@ -97,8 +117,8 @@ export default class HomeController extends Controller {
 
   public static warnMessage(cacheObject: BotDingDongInfo): string {
     return `【Bot掉线通知(${cacheObject.botName || cacheObject.botId})】
-登录时间：${moment(cacheObject.startTime * 1000).format("YYYY-MM-DD hh:mm:ss")}
-离线时间：${moment(cacheObject.responseTime * 1000).format("YYYY-MM-DD hh:mm:ss")}
+登录时间：${moment(cacheObject.startTime * 1000).format("YYYY-MM-DD HH:mm:ss")}
+离线时间：${moment(cacheObject.responseTime * 1000).format("YYYY-MM-DD HH:mm:ss")}
 在线时长：${this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime)}
 DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
@@ -129,8 +149,10 @@ DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   private async ddrStatistic() {
     let ddrString = '【DDR LIST】 \n BotName/BotId \t DingNum \t DDR \n';
     let flag = false;
-    for await (const key of memoryCard.keys()) {
-      const cacheObject: BotDingDongInfo | undefined = await memoryCard.get(key);
+
+    const keys = await this.allKeys()
+    for await (const key of keys) {
+      const cacheObject: BotDingDongInfo | undefined = await this.getValue(key);
       if (cacheObject) {
         flag = true;
         const ddr = cacheObject.dingNum === 0 ? '0.00' : (cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)
@@ -142,16 +164,17 @@ DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
 
   private async deadList() {
-    let deadStr = '【DEAD LIST】 \n'
+    let deadStr = '【DEAD LIST】 \nBotName \t BotId\n'
     let deadList: string[] = []
-    const botNumber = await memoryCard.size
+    const keys = await this.allKeys()
+    const botNumber = keys.length
     if (!botNumber) {
       return 'No dead bot due to no active bot!'
     }
-    for await (const key of memoryCard.keys()) {
-      const object = await memoryCard.get(key)
-      if (object && object.warnNum) {
-        deadList.push(object.botName || object.botId)
+    for await (const key of keys) {
+      const object = await this.getValue(key)
+      if (object && object.warnNum >= Config.WARNING_TIMES) {
+        deadList.push(object.botName? `${object.botName}(${object.botId})` : object.botId)
       }
     }
     if (deadList.length) {

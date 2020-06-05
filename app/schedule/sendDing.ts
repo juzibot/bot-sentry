@@ -1,13 +1,8 @@
+import { Subscription } from 'egg';
 import { sendMessage } from '../controller/message';
-/* import { MemoryCard } from 'memory-card';
-const MEMORY_CARD_NAME = 'bot-name';
-const memoryCard = new MemoryCard(MEMORY_CARD_NAME);
-memoryCard.load(); */
-const Subscription = require('egg').Subscription;
 import HomeController from '../controller/home'
 import { Config } from '../../config/config';
 
-const memoryCard = HomeController.memoryCard
 class SendDing extends Subscription {
   /**
    * @property {Object} schedule
@@ -21,22 +16,29 @@ class SendDing extends Subscription {
    */
   static get schedule() {
     return {
-      type: 'worker',
+      type: 'all',
       // cron: '0 0 3 * * *',
       interval: '1m',
-      immediate: true,
+      immediate: false,
     };
   }
 
   async subscribe() {
-    this.ctx.logger.info(`Ready to send #ding for each bot, bot lenght: ${await memoryCard.size}`);
-    for await (const key of memoryCard.keys()) {
+    const { ctx, app } = this
+    const keys = await app.redis.keys('*')
+    ctx.logger.info(`Ready to send #ding for each bot, bot length: ${keys.length}`);
+
+    for await (const key of keys) {
       // send #ding
-      const cacheObject = await memoryCard.get(key);
-      if (!cacheObject.warnNum) {
+      const _cacheObject = await app.redis.get(key);
+      if (!_cacheObject) {
+        throw new Error(`can not get cache object by key : ${key}`)
+      }
+      const cacheObject = JSON.parse(_cacheObject)
+      if (cacheObject.warnNum < Config.WARNING_TIMES) {
         await sendMessage('#ding', key);
         cacheObject.dingNum += 1;
-        await memoryCard.set(key, cacheObject);
+        await app.redis.set(key, JSON.stringify(cacheObject));
       }
 
       // warning
@@ -49,7 +51,7 @@ class SendDing extends Subscription {
         sendMessage(warnMessage);
         // sendMessage(warnMessage, Config.MANAGER_GAO);
         cacheObject.warnNum += 1;
-        await memoryCard.set(key, cacheObject);
+        await app.redis.set(key, JSON.stringify(cacheObject));
       }
     }
   }

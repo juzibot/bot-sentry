@@ -16,6 +16,15 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
+  config.redis = {
+    client: {
+      port: 6379,          // Redis port
+      host: '127.0.0.1',   // Redis host
+      password: '',
+      db: 0,
+    },
+  }
+
   const bodyParserConfig: any = {
     enable: true,
     encoding: 'utf8',
@@ -33,6 +42,7 @@ export default (appInfo: EggAppInfo) => {
       text: [ 'text/xml', 'application/xml' ],
     },
   };
+
   // 覆盖egg自带的配置
   config.bodyParser = bodyParserConfig;
 
