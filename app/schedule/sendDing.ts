@@ -36,7 +36,7 @@ class SendDing extends Subscription {
       }
 
       const cacheObject = JSON.parse(_cacheObject);
-      if (cacheObject.warnNum < Config.WARNING_TIMES) {
+      if (cacheObject.botId && cacheObject.warnNum < Config.WARNING_TIMES) {
         await sendMessage('#ding', key);
         cacheObject.dingNum += 1;
         await app.redis.set(key, JSON.stringify(cacheObject));
@@ -44,7 +44,7 @@ class SendDing extends Subscription {
 
       // warning
       const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
-      if (cacheObject.warnNum >= Config.WARNING_TIMES && flag > Config.TIMEOUT) {
+      if (cacheObject.warnNum && cacheObject.warnNum >= Config.WARNING_TIMES && flag > Config.TIMEOUT) {
         return;
       } else if (cacheObject.responseTime && flag > Config.TIMEOUT) {
         const warnMessage = HomeController.warnMessage(cacheObject);

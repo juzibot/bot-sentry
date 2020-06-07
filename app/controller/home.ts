@@ -43,7 +43,11 @@ export default class HomeController extends Controller {
     const objectStr = await app.redis.get(key);
     console.log(`objectStr : ${objectStr}`);
     if (objectStr) {
-      return JSON.parse(objectStr);
+      try {
+        return JSON.parse(objectStr);        
+      } catch (error) {
+        return objectStr
+      }
     }
     return null;
 
@@ -92,6 +96,7 @@ export default class HomeController extends Controller {
         };
       }
       await this.setValue(message.FromUserName, cacheObject);
+      await this.setValue(botId, message.FromUserName);
       const NOTICE_INFO = 'Hi, bot maintainer! \n\nThe message from bot is send by wechaty-puppet-donut, our AIM is to monitor your bot login / logout status. \n\nPlease just ignore this conversation, if you have any question about wechaty, please contact with \n\n[WeChat Account]: botorange22 \n\nThank you very much!';
       return this.responseMessage(message, NOTICE_INFO);
     } else if (message.MsgType === 'text' && message.Content.indexOf('#dong') !== -1) {
@@ -109,6 +114,10 @@ export default class HomeController extends Controller {
     } else if (message.MsgType === 'text' && message.Content.indexOf('#dead') !== -1) {
       const ddrString = await this.deadList();
       return this.responseMessage(message, ddrString);
+    } else if (message.MsgType === 'text' && message.Content.indexOf('#clear') !== -1) {
+      const botId = message.Content.split('#')[0]
+      await this.clearWarnNumByBotId(botId)
+      return this.responseMessage(message, 'already cleared!');
     }
     const commandInfo = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot';
     return this.responseMessage(message, commandInfo);
@@ -123,7 +132,15 @@ export default class HomeController extends Controller {
 DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
 
-  public static secondsToDhms(seconds: number) {
+  private async clearWarnNumByBotId(botId: string) {
+    const key = await this.getValue(botId)
+    const cacheObject = await this.getValue(key)
+    cacheObject.warnNum = 0
+    cacheObject.responseTime = Math.floor(Date.now() / 1000)
+    await this.setValue(key, cacheObject)
+  }
+
+  private static secondsToDhms(seconds: number) {
     const d = Math.floor(seconds / (3600 * 24));
     const h = Math.floor(seconds % (3600 * 24) / 3600);
     const m = Math.floor(seconds % 3600 / 60);
@@ -153,7 +170,7 @@ DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
     const keys = await this.allKeys();
     for await (const key of keys) {
       const cacheObject: BotDingDongInfo | undefined = await this.getValue(key);
-      if (cacheObject) {
+      if (cacheObject && cacheObject.botId) {
         flag = true;
         const ddr = cacheObject.dingNum === 0 ? '0.00' : (cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2);
         ddrString += `${cacheObject.botName || cacheObject.botId} \t ${cacheObject.dingNum} \t ${ddr}% \n`;
