@@ -74,7 +74,7 @@ export default class HomeController extends Controller {
           warnNum: 0,
           dingNum: 0,
           dongNum: 0,
-          responseTime: 0,
+          responseTime: parseInt(message.CreateTime, 10),
         };
       } else {
         let num = 0
@@ -88,7 +88,7 @@ export default class HomeController extends Controller {
           warnNum: 0,
           dingNum: num,
           dongNum: 0,
-          responseTime: 0,
+          responseTime: cacheObject.responseTime,
         };
       }
       await this.setValue(message.FromUserName, cacheObject);

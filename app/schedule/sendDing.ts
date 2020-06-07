@@ -19,7 +19,7 @@ class SendDing extends Subscription {
       type: 'all',
       // cron: '0 0 3 * * *',
       interval: '1m',
-      immediate: false,
+      immediate: true,
     };
   }
 
@@ -28,12 +28,13 @@ class SendDing extends Subscription {
     const keys = await app.redis.keys('*')
     ctx.logger.info(`Ready to send #ding for each bot, bot length: ${keys.length}`);
 
-    for await (const key of keys) {
+    keys.forEach(async (key: string) => {
       // send #ding
       const _cacheObject = await app.redis.get(key);
       if (!_cacheObject) {
         throw new Error(`can not get cache object by key : ${key}`)
       }
+
       const cacheObject = JSON.parse(_cacheObject)
       if (cacheObject.warnNum < Config.WARNING_TIMES) {
         await sendMessage('#ding', key);
@@ -45,15 +46,14 @@ class SendDing extends Subscription {
       const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
       if (cacheObject.warnNum >= Config.WARNING_TIMES && flag > Config.TIMEOUT) {
         return;
-      }
-      if (cacheObject.responseTime && flag > Config.TIMEOUT) {
+      } else if (cacheObject.responseTime && flag > Config.TIMEOUT) {
         const warnMessage = HomeController.warnMessage(cacheObject);
-        sendMessage(warnMessage);
-        // sendMessage(warnMessage, Config.MANAGER_GAO);
+        await sendMessage(warnMessage);
+        // await sendMessage(warnMessage, Config.MANAGER_GAO);
         cacheObject.warnNum += 1;
         await app.redis.set(key, JSON.stringify(cacheObject));
       }
-    }
+    })
   }
 
 }
