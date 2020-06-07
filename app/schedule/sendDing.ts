@@ -1,6 +1,6 @@
 import { Subscription } from 'egg';
 import { sendMessage } from '../controller/message';
-import HomeController from '../controller/home'
+import HomeController from '../controller/home';
 import { Config } from '../../config/config';
 
 class SendDing extends Subscription {
@@ -24,18 +24,18 @@ class SendDing extends Subscription {
   }
 
   async subscribe() {
-    const { ctx, app } = this
-    const keys = await app.redis.keys('*')
+    const { ctx, app } = this;
+    const keys = await app.redis.keys('*');
     ctx.logger.info(`Ready to send #ding for each bot, bot length: ${keys.length}`);
 
     keys.forEach(async (key: string) => {
       // send #ding
       const _cacheObject = await app.redis.get(key);
       if (!_cacheObject) {
-        throw new Error(`can not get cache object by key : ${key}`)
+        throw new Error(`can not get cache object by key : ${key}`);
       }
 
-      const cacheObject = JSON.parse(_cacheObject)
+      const cacheObject = JSON.parse(_cacheObject);
       if (cacheObject.warnNum < Config.WARNING_TIMES) {
         await sendMessage('#ding', key);
         cacheObject.dingNum += 1;
@@ -53,7 +53,7 @@ class SendDing extends Subscription {
         cacheObject.warnNum += 1;
         await app.redis.set(key, JSON.stringify(cacheObject));
       }
-    })
+    });
   }
 
 }
