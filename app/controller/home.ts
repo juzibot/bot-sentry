@@ -44,9 +44,9 @@ export default class HomeController extends Controller {
     console.log(`objectStr : ${objectStr}`);
     if (objectStr) {
       try {
-        return JSON.parse(objectStr);        
+        return JSON.parse(objectStr);
       } catch (error) {
-        return objectStr
+        return objectStr;
       }
     }
     return null;
@@ -115,8 +115,8 @@ export default class HomeController extends Controller {
       const ddrString = await this.deadList();
       return this.responseMessage(message, ddrString);
     } else if (message.MsgType === 'text' && message.Content.indexOf('#clear') !== -1) {
-      const botId = message.Content.split('#')[0]
-      await this.clearWarnNumByBotId(botId)
+      const botId = message.Content.split('#')[0];
+      await this.clearWarnNumByBotId(botId);
       return this.responseMessage(message, 'already cleared!');
     }
     const commandInfo = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot';
@@ -133,11 +133,11 @@ DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
 
   private async clearWarnNumByBotId(botId: string) {
-    const key = await this.getValue(botId)
-    const cacheObject = await this.getValue(key)
-    cacheObject.warnNum = 0
-    cacheObject.responseTime = Math.floor(Date.now() / 1000)
-    await this.setValue(key, cacheObject)
+    const key = await this.getValue(botId);
+    const cacheObject = await this.getValue(key);
+    cacheObject.warnNum = 0;
+    cacheObject.responseTime = Math.floor(Date.now() / 1000);
+    await this.setValue(key, cacheObject);
   }
 
   private static secondsToDhms(seconds: number) {
