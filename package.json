@@ -1,6 +1,6 @@
 {
-  "name": "donut-monitor",
-  "version": "1.0.0",
+  "name": "donut-status-monitor",
+  "version": "1.0.1",
   "description": "Monitor wechaty-puppet-donut login status",
   "private": true,
   "egg": {
