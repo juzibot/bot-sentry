@@ -11,8 +11,7 @@ const PRIVATE_LIST = [
   '#clear',
   '#reset',
   '#del',
-]
-
+];
 
 
 export default class HomeController extends Controller {
@@ -183,18 +182,18 @@ export default class HomeController extends Controller {
       }
     }
     let page = 0;
-    const totalPage = Math.ceil(str.length / MAX)
+    const totalPage = Math.ceil(str.length / MAX);
     while (str.length !== 0) {
       const partial = str.splice(0, MAX);
       page++;
       const totalDDR = totalDing === 0 ? '0.00' : (totalDong / totalDing * 100).toFixed(2);
-      const line = '--------------------------\n'
-      const pageStr = totalPage === 1 ? '' : `totalPage: ${totalPage}, curPage: ${page}\n`
+      const line = '--------------------------\n';
+      const pageStr = totalPage === 1 ? '' : `totalPage: ${totalPage}, curPage: ${page}\n`;
       const preStr = `【Statistics】\ntotalDDR: ${totalDDR}%\nonline: ${onlineNum}, offline: ${deadNum}\n${pageStr}${line}`;
-      const msg = preStr + partial.join('')
+      const msg = preStr + partial.join('');
       await sendMessage(msg, message.FromUserName);
     }
-    return totalPage === 0 ? 'No alive bot.' : 'All bots info load finished!'
+    return totalPage === 0 ? 'No alive bot.' : 'All bots info load finished!';
   }
 
   private async deadList() {
@@ -255,7 +254,7 @@ export default class HomeController extends Controller {
 
   private checkCommand(message: Message, command: string) {
     if (PRIVATE_LIST.includes(command) && message.FromUserName !== Config.MANAGER_SU) {
-      return false
+      return false;
     }
     return message.Content.indexOf(command) !== -1;
   }
