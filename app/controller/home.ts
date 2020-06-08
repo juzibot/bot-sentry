@@ -203,9 +203,9 @@ export default class HomeController extends Controller {
     if (!botNumber) {
       return 'No dead bot due to no active bot!';
     }
-    for await (const key of keys) {
+    for (const key of keys) {
       const object = await this.getValue(key);
-      if (object && object.warnNum >= Config.WARNING_TIMES) {
+      if (object && object.botId && object.warnNum >= Config.WARNING_TIMES) {
         const ddr = object.dingNum === 0 ? '0.00' : (object.dongNum / object.dingNum * 100).toFixed(2);
         deadList.push(`【${object.botName || object.botId}】\nBotId: ${object.botId}\nDeadTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\nDDR: ${ddr}%\n\n`);
       }
@@ -218,6 +218,9 @@ export default class HomeController extends Controller {
 
   private async getBotInfo(botId: string) {
     const key = await this.getValue(botId);
+    if (!key) {
+      return `Wrong botId[${botId}], please check it again!`
+    }
     const object = await this.getValue(key);
     const ddr = object.dingNum === 0 ? '0.00' : (object.dongNum / object.dingNum * 100).toFixed(2);
     const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${object.dingNum} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
@@ -226,6 +229,9 @@ export default class HomeController extends Controller {
 
   private async clearWarnNumByBotId(botId: string) {
     const key = await this.getValue(botId);
+    if (!key) {
+      return `Wrong botId[${botId}], please check it again!`
+    }
     const cacheObject = await this.getValue(key);
     cacheObject.warnNum = 0;
     cacheObject.responseTime = Math.floor(Date.now() / 1000);
@@ -234,6 +240,9 @@ export default class HomeController extends Controller {
 
   private async resetDingDongByBotId(botId: string) {
     const key = await this.getValue(botId);
+    if (!key) {
+      return `Wrong botId[${botId}], please check it again!`
+    }
     const cacheObject = await this.getValue(key);
     cacheObject.dingNum = 0;
     cacheObject.dongNum = 0;
@@ -247,6 +256,9 @@ export default class HomeController extends Controller {
       return 'you have no permition';
     }
     const key = await this.getValue(botId);
+    if (!key) {
+      return `Wrong botId[${botId}], please check it again!`
+    }
     await this.deleteKey(botId);
     await this.deleteKey(key);
     return 'already deleted!';
@@ -270,10 +282,11 @@ export default class HomeController extends Controller {
   }
 
   public static warnMessage(cacheObject: BotDingDongInfo): string {
+    const duringTime = cacheObject.responseTime === cacheObject.startTime ? '0s' : this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime)
     return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】
 LoginTime: ${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
 LogoutTime: ${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
-DuringTime: ${this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime)}
+DuringTime: ${duringTime}
 DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
 

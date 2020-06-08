@@ -3,6 +3,12 @@ import { sendMessage } from '../controller/message';
 import HomeController from '../controller/home';
 import { Config } from '../../config/config';
 
+const NOTIFY_LIST = [
+  'owRfxwoWHK_iwYZxuFmXFjF0vbqo', // su
+  'owRfxwrr-SCyLFGmCXBX8A_TzzoU', // gao
+  'owRfxwjXYizqQxxEN_Y0YitRPUH0', // bohao
+]
+
 class SendDing extends Subscription {
   /**
    * @property {Object} schedule
@@ -48,8 +54,7 @@ class SendDing extends Subscription {
         return;
       } else if (cacheObject.responseTime && flag > Config.TIMEOUT) {
         const warnMessage = HomeController.warnMessage(cacheObject);
-        await sendMessage(warnMessage);
-        await sendMessage(warnMessage, Config.MANAGER_GAO);
+        NOTIFY_LIST.map(id => sendMessage(warnMessage, id))
         cacheObject.warnNum += 1;
         await app.redis.set(key, JSON.stringify(cacheObject));
       }
