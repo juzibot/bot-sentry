@@ -219,7 +219,7 @@ export default class HomeController extends Controller {
   private async getBotInfo(botId: string) {
     const key = await this.getValue(botId);
     if (!key) {
-      return `Wrong botId[${botId}], please check it again!`
+      return `Wrong botId[${botId}], please check it again!`;
     }
     const object = await this.getValue(key);
     const ddr = object.dingNum === 0 ? '0.00' : (object.dongNum / object.dingNum * 100).toFixed(2);
@@ -230,7 +230,7 @@ export default class HomeController extends Controller {
   private async clearWarnNumByBotId(botId: string) {
     const key = await this.getValue(botId);
     if (!key) {
-      return `Wrong botId[${botId}], please check it again!`
+      return `Wrong botId[${botId}], please check it again!`;
     }
     const cacheObject = await this.getValue(key);
     cacheObject.warnNum = 0;
@@ -241,7 +241,7 @@ export default class HomeController extends Controller {
   private async resetDingDongByBotId(botId: string) {
     const key = await this.getValue(botId);
     if (!key) {
-      return `Wrong botId[${botId}], please check it again!`
+      return `Wrong botId[${botId}], please check it again!`;
     }
     const cacheObject = await this.getValue(key);
     cacheObject.dingNum = 0;
@@ -257,7 +257,7 @@ export default class HomeController extends Controller {
     }
     const key = await this.getValue(botId);
     if (!key) {
-      return `Wrong botId[${botId}], please check it again!`
+      return `Wrong botId[${botId}], please check it again!`;
     }
     await this.deleteKey(botId);
     await this.deleteKey(key);
@@ -282,7 +282,7 @@ export default class HomeController extends Controller {
   }
 
   public static warnMessage(cacheObject: BotDingDongInfo): string {
-    const duringTime = cacheObject.responseTime === cacheObject.startTime ? '0s' : this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime)
+    const duringTime = cacheObject.responseTime === cacheObject.startTime ? '0s' : this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime);
     return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】
 LoginTime: ${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
 LogoutTime: ${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
