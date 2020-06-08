@@ -5,6 +5,14 @@ import moment = require('moment');
 import { xmlToJson } from '../util/xmlToJson';
 import { Config } from '../../config/config';
 import { Message, BotDingDongInfo } from '../util/schema';
+import { sendMessage } from './message';
+
+const PRIVATE_LIST = [
+  '#clear',
+  '#reset',
+  '#del',
+]
+
 
 
 export default class HomeController extends Controller {
@@ -80,11 +88,15 @@ export default class HomeController extends Controller {
       await this.processDongMessage(message);
       return this.responseMessage(message, '@received-dong-message');
     } else if (this.checkCommand(message, '#ddr')) {
-      const ddrString = await this.ddrList();
+      const ddrString = await this.ddrList(message);
       return this.responseMessage(message, ddrString);
     } else if (this.checkCommand(message, '#dead')) {
       const ddrString = await this.deadList();
       return this.responseMessage(message, ddrString);
+    } else if (this.checkCommand(message, '#info')) {
+      const botId = message.Content.split('#')[0];
+      const botInfo = await this.getBotInfo(botId);
+      return this.responseMessage(message, botInfo);
     } else if (this.checkCommand(message, '#clear')) {
       const botId = message.Content.split('#')[0];
       await this.clearWarnNumByBotId(botId);
@@ -97,14 +109,9 @@ export default class HomeController extends Controller {
       const botId = message.Content.split('#')[0];
       const resMsg = await this.delObjectByBotId(message, botId);
       return this.responseMessage(message, resMsg);
-    } else if (this.checkCommand(message, '#info')) {
-      const botId = message.Content.split('#')[0];
-      const botInfo = await this.getBotInfo(botId);
-      return this.responseMessage(message, botInfo);
     }
     const commandInfo = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot';
     return this.responseMessage(message, commandInfo);
-
   }
 
   private async startMonitor(message: Message) {
@@ -156,25 +163,38 @@ export default class HomeController extends Controller {
     await this.setValue(message.FromUserName, cacheObject);
   }
 
-  private async ddrList() {
-    let flag = false;
-
+  private async ddrList(message: Message) {
+    const MAX = Config.MAX_OBJECT_OF_DDR_MSG;
     const keys = await this.allKeys();
     let deadNum = 0;
     let onlineNum = 0;
+    let totalDing = 0;
+    let totalDong = 0;
     const str: string[] = [];
     for (const key of keys) {
       const cacheObject: BotDingDongInfo | undefined = await this.getValue(key);
       if (cacheObject && cacheObject.botId) {
-        flag = true;
         const ddr = cacheObject.dingNum === 0 ? '0.00' : (cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2);
+        totalDing += cacheObject.dingNum;
+        totalDong += cacheObject.dongNum;
         const deadFlag = cacheObject.warnNum >= Config.WARNING_TIMES ? '【offline】' : '';
         cacheObject.warnNum >= Config.WARNING_TIMES ? deadNum++ : onlineNum++;
         str.push(`【${cacheObject.botName || cacheObject.botId}】${deadFlag}\nbotId: ${cacheObject.botId}\nDing/Dong: ${cacheObject.dingNum}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`);
       }
     }
-    const preStr = `【Statistics】\nonline: ${onlineNum}, offline: ${deadNum}\n\n`;
-    return flag ? preStr + str.join('') : 'No alive bot.';
+    let page = 0;
+    const totalPage = Math.ceil(str.length / MAX)
+    while (str.length !== 0) {
+      const partial = str.splice(0, MAX);
+      page++;
+      const totalDDR = totalDing === 0 ? '0.00' : (totalDong / totalDing * 100).toFixed(2);
+      const line = '--------------------------\n'
+      const pageStr = totalPage === 1 ? '' : `totalPage: ${totalPage}, curPage: ${page}\n`
+      const preStr = `【Statistics】\ntotalDDR: ${totalDDR}%\nonline: ${onlineNum}, offline: ${deadNum}\n${pageStr}${line}`;
+      const msg = preStr + partial.join('')
+      await sendMessage(msg, message.FromUserName);
+    }
+    return totalPage === 0 ? 'No alive bot.' : 'All bots info load finished!'
   }
 
   private async deadList() {
@@ -188,13 +208,21 @@ export default class HomeController extends Controller {
       const object = await this.getValue(key);
       if (object && object.warnNum >= Config.WARNING_TIMES) {
         const ddr = object.dingNum === 0 ? '0.00' : (object.dongNum / object.dingNum * 100).toFixed(2);
-        deadList.push(`【${object.botName || object.botId}】\nbotId: ${object.botId}\nStopTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\nDDR: ${ddr}\n\n`);
+        deadList.push(`【${object.botName || object.botId}】\nBotId: ${object.botId}\nDeadTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\nDDR: ${ddr}%\n\n`);
       }
     }
     if (deadList.length) {
       return deadList.join('').toString();
     }
     return 'No dead bot!';
+  }
+
+  private async getBotInfo(botId: string) {
+    const key = await this.getValue(botId);
+    const object = await this.getValue(key);
+    const ddr = object.dingNum === 0 ? '0.00' : (object.dongNum / object.dingNum * 100).toFixed(2);
+    const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${object.dingNum} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
+    return info;
   }
 
   private async clearWarnNumByBotId(botId: string) {
@@ -225,15 +253,10 @@ export default class HomeController extends Controller {
     return 'already deleted!';
   }
 
-  private async getBotInfo(botId: string) {
-    const key = await this.getValue(botId);
-    const object = await this.getValue(key);
-    const ddr = object.dingNum === 0 ? '0.00' : (object.dongNum / object.dingNum * 100).toFixed(2);
-    const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr} \nDingNum: ${object.dingNum} \nDongNum: ${object.dongNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
-    return info;
-  }
-
   private checkCommand(message: Message, command: string) {
+    if (PRIVATE_LIST.includes(command) && message.FromUserName !== Config.MANAGER_SU) {
+      return false
+    }
     return message.Content.indexOf(command) !== -1;
   }
 
@@ -248,10 +271,10 @@ export default class HomeController extends Controller {
   }
 
   public static warnMessage(cacheObject: BotDingDongInfo): string {
-    return `【掉线通知(${cacheObject.botName || cacheObject.botId})】
-登录时间：${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
-离线时间：${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
-在线时长：${this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime)}
+    return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】
+LoginTime: ${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
+LogoutTime: ${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
+DuringTime: ${this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime)}
 DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
 

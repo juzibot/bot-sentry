@@ -49,7 +49,7 @@ class SendDing extends Subscription {
       } else if (cacheObject.responseTime && flag > Config.TIMEOUT) {
         const warnMessage = HomeController.warnMessage(cacheObject);
         await sendMessage(warnMessage);
-        // await sendMessage(warnMessage, Config.MANAGER_GAO);
+        await sendMessage(warnMessage, Config.MANAGER_GAO);
         cacheObject.warnNum += 1;
         await app.redis.set(key, JSON.stringify(cacheObject));
       }
