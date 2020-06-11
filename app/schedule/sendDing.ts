@@ -5,8 +5,8 @@ import { Config } from '../../config/config';
 
 const NOTIFY_LIST = [
   'owRfxwoWHK_iwYZxuFmXFjF0vbqo', // su
-  'owRfxwrr-SCyLFGmCXBX8A_TzzoU', // gao
-  'owRfxwjXYizqQxxEN_Y0YitRPUH0', // bohao
+  // 'owRfxwrr-SCyLFGmCXBX8A_TzzoU', // gao
+  // 'owRfxwjXYizqQxxEN_Y0YitRPUH0', // bohao
 ];
 
 class SendDing extends Subscription {
@@ -25,7 +25,7 @@ class SendDing extends Subscription {
       type: 'all',
       // cron: '0 0 3 * * *',
       interval: '1m',
-      immediate: true,
+      immediate: false,
     };
   }
 

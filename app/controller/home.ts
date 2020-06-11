@@ -11,6 +11,7 @@ const PRIVATE_LIST = [
   '#clear',
   '#reset',
   '#del',
+  '#ZW',
 ];
 
 
@@ -108,6 +109,9 @@ export default class HomeController extends Controller {
       const botId = message.Content.split('#')[0];
       const resMsg = await this.delObjectByBotId(message, botId);
       return this.responseMessage(message, resMsg);
+    } else if (this.checkCommand(message, '#ZW')) {
+      await this.clearWarnNum();
+      return this.responseMessage(message, 'already cleared all!');
     }
     const commandInfo = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot';
     return this.responseMessage(message, commandInfo);
@@ -262,6 +266,18 @@ export default class HomeController extends Controller {
     await this.deleteKey(botId);
     await this.deleteKey(key);
     return 'already deleted!';
+  }
+
+  private async clearWarnNum() {
+    const keys = await this.allKeys();
+    for (const key of keys) {
+      const object = await this.getValue(key);
+      if (object && object.botId) {
+        object.warnNum = 0;
+        object.responseTime = Math.floor(Date.now() / 1000);
+        await this.setValue(key, object);
+      }
+    }
   }
 
   private checkCommand(message: Message, command: string) {
