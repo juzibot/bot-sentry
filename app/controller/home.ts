@@ -287,6 +287,7 @@ export default class HomeController extends Controller {
 LoginTime: ${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
 LogoutTime: ${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
 DuringTime: ${duringTime}
+WarnNum: ${cacheObject.warnNum}
 DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
 

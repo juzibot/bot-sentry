@@ -50,11 +50,13 @@ class SendDing extends Subscription {
 
       // warning
       const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
-      if (cacheObject.warnNum && cacheObject.warnNum >= Config.WARNING_TIMES && flag > Config.TIMEOUT) {
-        return;
-      } else if (cacheObject.responseTime && flag > Config.TIMEOUT) {
+      if (cacheObject.warnNum && cacheObject.warnNum === Config.WARNING_TIMES && flag > Config.TIMEOUT) {
         const warnMessage = HomeController.warnMessage(cacheObject);
         NOTIFY_LIST.map(id => sendMessage(warnMessage, id));
+        cacheObject.warnNum += 1;
+        await app.redis.set(key, JSON.stringify(cacheObject));
+        return;
+      } else if (cacheObject.responseTime && flag > Config.TIMEOUT) {
         cacheObject.warnNum += 1;
         await app.redis.set(key, JSON.stringify(cacheObject));
       }
