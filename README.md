@@ -1,33 +1,37 @@
-# hackernews-async-ts
 
-[Hacker News](https://news.ycombinator.com/) showcase using typescript && egg
+## Brief Introduction
+This project will monitor bot login status by interaction with Official Account, there are two requests for the bot:
+1. send `botId#ding-start` to OA when the bot start;
+2. the bot could auto reply #ding with `botId#dong`;
 
-## QuickStart
+## Deploy
 
-### Development
-
+### step 1
+> Set APPID and APPSECRET of Official Account to env
 ```bash
-$ npm i
-$ npm run dev
-$ open http://localhost:7001/
+export APPID='xxx'
+export APPSECRET='xxx'
 ```
 
-Don't tsc compile at development mode, if you had run `tsc` then you need to `npm run clean` before `npm run dev`.
-
-### Deploy
-
+### step 2
 ```bash
 $ npm run tsc
 $ npm start
 ```
 
-### Npm Scripts
+### Command List
+#### public list
 
-- Use `npm run lint` to check code style
-- Use `npm test` to run unit test
-- se `npm run clean` to clean compiled js at development mode once
+- `#ddr`: show all bots' statistics
 
-### Requirement
+- `#dead`: show all dead bots
 
-- Node.js 8.x
-- Typescript 2.8+
+- `botId#info`: search bot info by bot id
+
+#### private list
+
+- `botId#clear`: clear warn number and replace the response time by current time
+
+- `botId#reset`: reset all attributes of cache object
+
+- `botId#del`: delete the bot info
