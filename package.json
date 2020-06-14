@@ -1,6 +1,6 @@
 {
-  "name": "donut-status-monitor",
-  "version": "1.0.1",
+  "name": "bot-sentry",
+  "version": "0.0.1",
   "description": "Monitor wechaty-puppet-donut login status",
   "private": true,
   "egg": {
@@ -8,8 +8,8 @@
     "declarations": true
   },
   "scripts": {
-    "start": "egg-scripts start --workers=1 --daemon --title=egg-server-donut-monitor",
-    "stop": "egg-scripts stop --title=egg-server-donut-monitor",
+    "start": "egg-scripts start --workers=1 --daemon --title=egg-server-bot-sentry",
+    "stop": "egg-scripts stop --title=egg-server-bot-sentry",
     "dev": "egg-bin dev",
     "debug": "egg-bin debug",
     "test-local": "egg-bin test",
