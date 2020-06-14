@@ -1,15 +1,9 @@
 import { Subscription } from 'egg';
-import { sendMessage } from '../controller/message';
+import { sendMessage } from '../util/message';
 import HomeController from '../controller/home';
-import { Config } from '../../config/config';
+import { NOTIFY_LIST, WARN_OPTIONS } from '../../config/config';
 
-const NOTIFY_LIST = [
-  'owRfxwoWHK_iwYZxuFmXFjF0vbqo', // su
-  // 'owRfxwrr-SCyLFGmCXBX8A_TzzoU', // gao
-  // 'owRfxwjXYizqQxxEN_Y0YitRPUH0', // bohao
-];
-
-class SendDing extends Subscription {
+class Warning extends Subscription {
   /**
    * @property {Object} schedule
    *  - {String} type - schedule type, `worker` or `all` or your custom types.
@@ -42,7 +36,7 @@ class SendDing extends Subscription {
       }
 
       const cacheObject = JSON.parse(_cacheObject);
-      if (cacheObject.botId && cacheObject.warnNum < Config.WARNING_TIMES) {
+      if (cacheObject.botId && cacheObject.warnNum < WARN_OPTIONS.WARNING_TIMES) {
         await sendMessage('#ding', key);
         cacheObject.dingNum += 1;
         await app.redis.set(key, JSON.stringify(cacheObject));
@@ -50,13 +44,13 @@ class SendDing extends Subscription {
 
       // warning
       const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
-      if (cacheObject.warnNum && cacheObject.warnNum === Config.WARNING_TIMES && flag > Config.TIMEOUT) {
+      if (cacheObject.warnNum && cacheObject.warnNum === WARN_OPTIONS.WARNING_TIMES && flag > WARN_OPTIONS.TIMEOUT) {
         const warnMessage = HomeController.warnMessage(cacheObject);
         NOTIFY_LIST.map(id => sendMessage(warnMessage, id));
         cacheObject.warnNum += 1;
         await app.redis.set(key, JSON.stringify(cacheObject));
         return;
-      } else if (cacheObject.responseTime && flag > Config.TIMEOUT) {
+      } else if (cacheObject.responseTime && flag > WARN_OPTIONS.TIMEOUT) {
         cacheObject.warnNum += 1;
         await app.redis.set(key, JSON.stringify(cacheObject));
       }
@@ -65,4 +59,4 @@ class SendDing extends Subscription {
 
 }
 
-module.exports = SendDing;
+module.exports = Warning;

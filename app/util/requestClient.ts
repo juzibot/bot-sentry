@@ -1,11 +1,11 @@
 import axios from 'axios';
-import { Config } from '../../config/config';
+import { BASE_URL } from '../../config/config';
 
 
 export default class RequestClient {
   async request(option: any) {
     const { data } = option;
-    const url = Config.BASE_URL + option.url;
+    const url = BASE_URL + option.url;
 
     const headers = {
       Accept: 'application/json',

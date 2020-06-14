@@ -3,13 +3,11 @@
 
 import 'egg';
 import ExportHome from '../../../app/controller/home';
-import ExportMessage from '../../../app/controller/message';
-import ExportTokenManager from '../../../app/controller/tokenManager';
+import ExportSchema from '../../../app/controller/schema';
 
 declare module 'egg' {
   interface IController {
     home: ExportHome;
-    message: ExportMessage;
-    tokenManager: ExportTokenManager;
+    schema: ExportSchema;
   }
 }

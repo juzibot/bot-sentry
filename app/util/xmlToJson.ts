@@ -1,5 +1,5 @@
 import { parseString } from 'xml2js';
-import { Message } from './schema';
+import { Message } from '../controller/schema';
 
 interface XMLObject {
   xml: Message;

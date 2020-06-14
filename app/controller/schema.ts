@@ -16,3 +16,8 @@ export interface Message {
   Content: string;
   MsgId: string;
 }
+
+export interface DdrObject {
+  content: string;
+  ddr: number;
+}

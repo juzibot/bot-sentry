@@ -3,17 +3,9 @@ import crypto = require('crypto');
 import moment = require('moment');
 
 import { xmlToJson } from '../util/xmlToJson';
-import { Config } from '../../config/config';
-import { Message, BotDingDongInfo } from '../util/schema';
-import { sendMessage } from './message';
-
-const PRIVATE_LIST = [
-  '#clear',
-  '#reset',
-  '#del',
-  '#ZW',
-];
-
+import { PRIVATE_LIST, WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE } from '../../config/config';
+import { Message, BotDingDongInfo, DdrObject } from './schema';
+import { sendMessage } from '../util/message';
 
 export default class HomeController extends Controller {
 
@@ -22,7 +14,7 @@ export default class HomeController extends Controller {
     logger.info(`check(), time: ${new Date()}`);
     const query = ctx.query;
     const { signature, timestamp, nonce, echostr } = query;
-    const str = [ timestamp, nonce, Config.MY_TOKEN ].sort().join('');
+    const str = [ timestamp, nonce, WARN_OPTIONS.MY_TOKEN ].sort().join('');
     const result = crypto.createHash('sha1').update(str).digest('hex');
 
     if (result === signature) {
@@ -41,40 +33,6 @@ export default class HomeController extends Controller {
     ctx.body = await this.processMessage(message);
   }
 
-  /**
-   * Redis Operations
-   */
-  public async allKeys(): Promise<string[]> {
-    return this.app.redis.keys('*');
-  }
-
-  public async deleteKey(key: string): Promise<void> {
-    const { app } = this;
-    await app.redis.del(key);
-  }
-
-  public async getValue(key: string): Promise<any> {
-    const { logger, app } = this;
-    logger.info(`getValue(${key})`);
-    const objectStr = await app.redis.get(key);
-    console.log(`objectStr : ${objectStr}`);
-    if (objectStr) {
-      try {
-        return JSON.parse(objectStr);
-      } catch (error) {
-        return objectStr;
-      }
-    }
-    return null;
-
-  }
-
-  public async setValue(key: string, value: any): Promise<void> {
-    const { logger, app } = this;
-    logger.info(`setValue(${key}, ${JSON.stringify(value)})`);
-    await app.redis.set(key, JSON.stringify(value));
-  }
-
   private async processMessage(message: Message) {
     if (message.MsgType !== 'text') {
       return;
@@ -82,8 +40,7 @@ export default class HomeController extends Controller {
 
     if (this.checkCommand(message, '#ding-start')) {
       await this.startMonitor(message);
-      const NOTICE_INFO = 'Hi, bot maintainer! \n\nThe message from bot is send by wechaty-puppet-donut, our AIM is to monitor your bot login / logout status. \n\nPlease just ignore this conversation, if you have any question about wechaty, please contact with \n\n[WeChat Account]: botorange22 \n\nThank you very much!';
-      return this.responseMessage(message, NOTICE_INFO);
+      return this.responseMessage(message, INIT_MESSAGE);
     } else if (this.checkCommand(message, '#dong')) {
       await this.processDongMessage(message);
       return this.responseMessage(message, '@received-dong-message');
@@ -167,34 +124,39 @@ export default class HomeController extends Controller {
   }
 
   private async ddrList(message: Message) {
-    const MAX = Config.MAX_OBJECT_OF_DDR_MSG;
+    const MAX = WARN_OPTIONS.MAX_OBJECT_OF_DDR_MSG;
     const keys = await this.allKeys();
     let deadNum = 0;
     let onlineNum = 0;
     let totalDing = 0;
     let totalDong = 0;
-    const str: string[] = [];
+    const ddrObjectList: DdrObject[] = [];
     for (const key of keys) {
       const cacheObject: BotDingDongInfo | undefined = await this.getValue(key);
       if (cacheObject && cacheObject.botId) {
         const ddr = cacheObject.dingNum === 0 ? '0.00' : (cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2);
         totalDing += cacheObject.dingNum;
         totalDong += cacheObject.dongNum;
-        const deadFlag = cacheObject.warnNum >= Config.WARNING_TIMES ? '【offline】' : '';
-        cacheObject.warnNum >= Config.WARNING_TIMES ? deadNum++ : onlineNum++;
-        str.push(`【${cacheObject.botName || cacheObject.botId}】${deadFlag}\nbotId: ${cacheObject.botId}\nDing/Dong: ${cacheObject.dingNum}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`);
+        const deadFlag = cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? '【offline】' : '';
+        cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? deadNum++ : onlineNum++;
+        const object = {
+          content: `【${cacheObject.botName || cacheObject.botId}】${deadFlag}\nbotId: ${cacheObject.botId}\nDing/Dong: ${cacheObject.dingNum}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
+          ddr: cacheObject.dingNum / cacheObject.dongNum,
+        };
+        ddrObjectList.push(object);
       }
     }
+    const _ddrObjectList = ddrObjectList.sort((a, b) => b.ddr - a.ddr).map(object => object.content);
     let page = 0;
-    const totalPage = Math.ceil(str.length / MAX);
-    while (str.length !== 0) {
-      const partial = str.splice(0, MAX);
+    const totalPage = Math.ceil(_ddrObjectList.length / MAX);
+    while (_ddrObjectList.length !== 0) {
+      const partial = _ddrObjectList.splice(0, MAX);
       page++;
       const totalDDR = totalDing === 0 ? '0.00' : (totalDong / totalDing * 100).toFixed(2);
       const line = '--------------------------\n';
       const pageStr = totalPage === 1 ? '' : `totalPage: ${totalPage}, curPage: ${page}\n`;
-      const preStr = `【Statistics】\ntotalDDR: ${totalDDR}%\nonline: ${onlineNum}, offline: ${deadNum}\n${pageStr}${line}`;
-      const msg = preStr + partial.join('');
+      const titleAbstract = `【Statistics】\ntotalDDR: ${totalDDR}%\nonline: ${onlineNum}, offline: ${deadNum}\n${pageStr}${line}`;
+      const msg = titleAbstract + partial.join('');
       await sendMessage(msg, message.FromUserName);
     }
     return totalPage === 0 ? 'No alive bot.' : 'All bots info load finished!';
@@ -209,7 +171,7 @@ export default class HomeController extends Controller {
     }
     for (const key of keys) {
       const object = await this.getValue(key);
-      if (object && object.botId && object.warnNum >= Config.WARNING_TIMES) {
+      if (object && object.botId && object.warnNum >= WARN_OPTIONS.WARNING_TIMES) {
         const ddr = object.dingNum === 0 ? '0.00' : (object.dongNum / object.dingNum * 100).toFixed(2);
         deadList.push(`【${object.botName || object.botId}】\nBotId: ${object.botId}\nDeadTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\nDDR: ${ddr}%\n\n`);
       }
@@ -256,7 +218,7 @@ export default class HomeController extends Controller {
   }
 
   private async delObjectByBotId(message: Message, botId: string): Promise<string> {
-    if (message.FromUserName !== Config.MANAGER_SU) {
+    if (message.FromUserName !== NOTIFY_LIST[0]) {
       return 'you have no permition';
     }
     const key = await this.getValue(botId);
@@ -281,7 +243,7 @@ export default class HomeController extends Controller {
   }
 
   private checkCommand(message: Message, command: string) {
-    if (PRIVATE_LIST.includes(command) && message.FromUserName !== Config.MANAGER_SU) {
+    if (PRIVATE_LIST.includes(command) && message.FromUserName !== NOTIFY_LIST[0]) {
       return false;
     }
     return message.Content.indexOf(command) !== -1;
@@ -320,4 +282,38 @@ DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
     return dDisplay + hDisplay + mDisplay + sDisplay;
   }
 
+  /**
+   * Redis Operations
+   */
+  public async allKeys(): Promise<string[]> {
+    const { app } = this;
+    return app.redis.keys('*');
+  }
+
+  public async deleteKey(key: string): Promise<void> {
+    const { app } = this;
+    await app.redis.del(key);
+  }
+
+  public async getValue(key: string): Promise<any> {
+    const { logger, app } = this;
+    logger.info(`getValue(${key})`);
+    const objectStr = await app.redis.get(key);
+    console.log(`objectStr : ${objectStr}`);
+    if (objectStr) {
+      try {
+        return JSON.parse(objectStr);
+      } catch (error) {
+        return objectStr;
+      }
+    }
+    return null;
+
+  }
+
+  public async setValue(key: string, value: any): Promise<void> {
+    const { logger, app } = this;
+    logger.info(`setValue(${key}, ${JSON.stringify(value)})`);
+    await app.redis.set(key, JSON.stringify(value));
+  }
 }
