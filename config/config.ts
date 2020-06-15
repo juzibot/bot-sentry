@@ -6,7 +6,7 @@ export const INIT_MESSAGE = 'Hi, bot maintainer! \n\nThe message from bot is sen
 
 export enum WARN_OPTIONS {
   MY_TOKEN = '5f6f30b388ca0401',
-  WARNING_TIMES = 2,
+  WARNING_TIMES = 3,
   MAX_OBJECT_OF_DDR_MSG = 7,
   TIMEOUT = 100,
 }

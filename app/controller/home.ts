@@ -104,8 +104,8 @@ export default class HomeController extends Controller {
         botName,
         startTime: parseInt(message.CreateTime, 10),
         warnNum: 0,
-        dingNum: num,
-        dongNum: 0,
+        dingNum: num + cacheObject.dingNum,
+        dongNum: cacheObject.dongNum,
         responseTime: cacheObject.responseTime,
       };
     }
