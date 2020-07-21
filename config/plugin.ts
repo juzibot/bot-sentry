@@ -10,6 +10,10 @@ const plugin: EggPlugin = {
     enable: true,
     package: 'egg-redis',
   },
+  mongoose: {
+    enable: true,
+    package: 'egg-mongoose',
+  },
 };
 
 export default plugin;

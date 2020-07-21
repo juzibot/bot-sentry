@@ -19,9 +19,16 @@ export default (appInfo: EggAppInfo) => {
   config.redis = {
     client: {
       port: 6379, // Redis port
-      host: '127.0.0.1', // Redis host
+      host: 'localhost', // '161.189.142.0', // Redis host
       password: '',
       db: 0,
+    },
+  };
+
+  config.mongoose = {
+    client: {
+      url: 'mongodb://68.79.47.251/donut',
+      options: {},
     },
   };
 

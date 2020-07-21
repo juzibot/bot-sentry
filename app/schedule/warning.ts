@@ -36,23 +36,25 @@ class Warning extends Subscription {
       }
 
       const cacheObject = JSON.parse(_cacheObject);
-      if (cacheObject.botId && cacheObject.warnNum < WARN_OPTIONS.WARNING_TIMES) {
-        await sendMessage('#ding', key);
-        cacheObject.dingNum += 1;
-        await app.redis.set(key, JSON.stringify(cacheObject));
-      }
+      if (HomeController.type.includes(cacheObject.tokenType)) {
+        if (cacheObject.botId && cacheObject.warnNum < WARN_OPTIONS.WARNING_TIMES) {
+          await sendMessage('#ding', key);
+          cacheObject.dingNum += 1;
+          await app.redis.set(key, JSON.stringify(cacheObject));
+        }
 
-      // warning
-      const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
-      if (cacheObject.warnNum && cacheObject.warnNum === WARN_OPTIONS.WARNING_TIMES && flag > WARN_OPTIONS.TIMEOUT) {
-        const warnMessage = HomeController.warnMessage(cacheObject);
-        NOTIFY_LIST.map(id => sendMessage(warnMessage, id));
-        cacheObject.warnNum += 1;
-        await app.redis.set(key, JSON.stringify(cacheObject));
-        return;
-      } else if (cacheObject.responseTime && flag > WARN_OPTIONS.TIMEOUT) {
-        cacheObject.warnNum += 1;
-        await app.redis.set(key, JSON.stringify(cacheObject));
+        // warning
+        const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
+        if (cacheObject.warnNum && cacheObject.warnNum === WARN_OPTIONS.WARNING_TIMES && flag > WARN_OPTIONS.TIMEOUT) {
+          const warnMessage = HomeController.warnMessage(cacheObject);
+          NOTIFY_LIST.map(id => sendMessage(warnMessage, id));
+          cacheObject.warnNum += 1;
+          await app.redis.set(key, JSON.stringify(cacheObject));
+          return;
+        } else if (cacheObject.responseTime && flag > WARN_OPTIONS.TIMEOUT) {
+          cacheObject.warnNum += 1;
+          await app.redis.set(key, JSON.stringify(cacheObject));
+        }
       }
     });
   }

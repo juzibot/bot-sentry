@@ -9,6 +9,8 @@ import { sendMessage } from '../util/message';
 
 export default class HomeController extends Controller {
 
+  public static type = [ 1 ];
+
   public async check() {
     const { ctx, logger } = this;
     logger.info(`check(), time: ${new Date()}`);
@@ -69,48 +71,89 @@ export default class HomeController extends Controller {
     } else if (this.checkCommand(message, '#ZW')) {
       await this.clearWarnNum();
       return this.responseMessage(message, 'already cleared all!');
+    } else if (this.checkCommand(message, '#type')) {
+      HomeController.type = message.Content.split('#')[0].split(',').map(n => Number(n));
+      return this.responseMessage(message, 'set monitor type');
+    } else if (this.checkCommand(message, '#token')) {
+      const token = message.Content.split('#')[0];
+      const wxidListOfToken = await this.getWxidListByToken(token);
+      return this.responseMessage(message, wxidListOfToken);
     }
     const commandInfo = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot';
     return this.responseMessage(message, commandInfo);
+  }
+
+  private async getWxidListByToken(token: string) {
+    const list = await this.getValue(token);
+
+    const strList = list.map(object => `【${object.botId}】\nBotName: ${object.botName}\nloginTime: ${moment(object.loginTime * 1000).format('MM-DD HH:mm:ss')}\n\n`);
+    return strList.join('').toString();
+  }
+
+  private async getTokenType(token: string) {
+    const { ctx } = this;
+    const userList = await ctx.model.User.find();
+
+    if (!userList || userList.length === 0) {
+      return [];
+    }
+
+    const tokens = userList.map(user => user.tokens).reduce((pre, cur) => pre.concat(cur), []);
+    const tokenObject = tokens.filter(t => t.token === token);
+    if (tokenObject.length !== 1) {
+      throw new Error(`can not find tokenObject by token: ${token}, length: ${tokenObject.length}`);
+    }
+    return tokenObject[0].type || 0;
   }
 
   private async startMonitor(message: Message) {
     const strArr = message.Content.split('#');
     const botId = strArr[0];
     let botName = '';
+    let token = '';
+    let tokenType = '';
     if (strArr.length === 3) {
       botName = strArr[1];
     }
 
-    let cacheObject = await this.getValue(message.FromUserName);
+    if (strArr.length === 4) {
+      botName = strArr[1];
+      token = strArr[2];
+      tokenType = await this.getTokenType(token);
+    }
 
-    if (!cacheObject) {
-      cacheObject = {
-        botId,
-        botName,
-        startTime: parseInt(message.CreateTime, 10),
-        warnNum: 0,
-        dingNum: 0,
-        dongNum: 0,
-        responseTime: parseInt(message.CreateTime, 10),
-      };
-    } else {
-      let num = 0;
-      if (cacheObject.responseTime) {
-        num = Math.floor((parseInt(message.CreateTime, 10) - cacheObject.responseTime) / 60);
-      }
-      cacheObject = {
-        botId,
-        botName,
-        startTime: parseInt(message.CreateTime, 10),
-        warnNum: 0,
-        dingNum: num + cacheObject.dingNum,
-        dongNum: cacheObject.dongNum,
-        responseTime: cacheObject.responseTime,
-      };
+    const cacheObject = {
+      botId,
+      botName,
+      token: '',
+      tokenType,
+      startTime: parseInt(message.CreateTime, 10),
+      warnNum: 0,
+      dingNum: 0,
+      dongNum: 0,
+      responseTime: parseInt(message.CreateTime, 10),
+    };
+    if (token) {
+      cacheObject.token = token;
     }
     await this.setValue(message.FromUserName, cacheObject);
     await this.setValue(botId, message.FromUserName);
+
+    if (token) {
+      const botInfo = {
+        wxid: botId,
+        botName,
+        token,
+        loginTime: cacheObject.startTime,
+      };
+      let botInfoList = await this.getValue(token);
+      if (botInfoList && botInfoList.length) {
+        botInfoList.push(botInfo);
+      } else {
+        botInfoList = [ botInfo ];
+      }
+      await this.setValue(token, botInfoList);
+    }
   }
 
   private async processDongMessage(message: Message): Promise<void> {
@@ -134,25 +177,25 @@ export default class HomeController extends Controller {
     for (const key of keys) {
       const cacheObject: BotDingDongInfo | undefined = await this.getValue(key);
       if (cacheObject && cacheObject.botId) {
-        const ddr = cacheObject.dingNum === 0 ? '0.00' : (cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2);
-        totalDing += cacheObject.dingNum;
+        const ddr = this.getDDR(cacheObject);
+        totalDing += this.getRealDingNum(cacheObject);
         totalDong += cacheObject.dongNum;
         const deadFlag = cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? '【offline】' : '';
         cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? deadNum++ : onlineNum++;
         const object = {
           content: `【${cacheObject.botName || cacheObject.botId}】${deadFlag}\nbotId: ${cacheObject.botId}\nDing/Dong: ${cacheObject.dingNum}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
-          ddr: cacheObject.dingNum / cacheObject.dongNum,
+          ddr,
         };
         ddrObjectList.push(object);
       }
     }
-    const _ddrObjectList = ddrObjectList.sort((a, b) => b.ddr - a.ddr).map(object => object.content);
+    const _ddrObjectList = ddrObjectList.sort((a, b) => a.ddr - b.ddr).map(object => object.content);
     let page = 0;
     const totalPage = Math.ceil(_ddrObjectList.length / MAX);
     while (_ddrObjectList.length !== 0) {
       const partial = _ddrObjectList.splice(0, MAX);
       page++;
-      const totalDDR = totalDing === 0 ? '0.00' : (totalDong / totalDing * 100).toFixed(2);
+      const totalDDR = this._getDDR(totalDing, totalDong);
       const line = '--------------------------\n';
       const pageStr = totalPage === 1 ? '' : `totalPage: ${totalPage}, curPage: ${page}\n`;
       const titleAbstract = `【Statistics】\ntotalDDR: ${totalDDR}%\nonline: ${onlineNum}, offline: ${deadNum}\n${pageStr}${line}`;
@@ -160,6 +203,24 @@ export default class HomeController extends Controller {
       await sendMessage(msg, message.FromUserName);
     }
     return totalPage === 0 ? 'No alive bot.' : 'All bots info load finished!';
+  }
+
+  private getRealDingNum(object: BotDingDongInfo) {
+    const { dingNum, responseTime } = object;
+    const now = Date.now();
+    const deadDingNum = responseTime ? Math.floor((now - responseTime) / 60 / 1000) : 0;
+    const realDingNum = dingNum + deadDingNum;
+    return realDingNum;
+  }
+
+  private _getDDR(ding: number, dong: number) {
+    return ding === 0 ? 0.00 : Number(((dong / ding) * 100).toFixed(2));
+  }
+
+  private getDDR(object: BotDingDongInfo) {
+    const { dongNum } = object;
+    const realDingNum = this.getRealDingNum(object);
+    return this._getDDR(realDingNum, dongNum);
   }
 
   private async deadList() {
@@ -172,7 +233,7 @@ export default class HomeController extends Controller {
     for (const key of keys) {
       const object = await this.getValue(key);
       if (object && object.botId && object.warnNum >= WARN_OPTIONS.WARNING_TIMES) {
-        const ddr = object.dingNum === 0 ? '0.00' : (object.dongNum / object.dingNum * 100).toFixed(2);
+        const ddr = this.getDDR(object);
         deadList.push(`【${object.botName || object.botId}】\nBotId: ${object.botId}\nDeadTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\nDDR: ${ddr}%\n\n`);
       }
     }
@@ -188,7 +249,7 @@ export default class HomeController extends Controller {
       return `Wrong botId[${botId}], please check it again!`;
     }
     const object = await this.getValue(key);
-    const ddr = object.dingNum === 0 ? '0.00' : (object.dongNum / object.dingNum * 100).toFixed(2);
+    const ddr = this.getDDR(object);
     const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${object.dingNum} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
     return info;
   }
@@ -265,7 +326,8 @@ export default class HomeController extends Controller {
 LoginTime: ${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
 LogoutTime: ${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
 DuringTime: ${duringTime}
-WarnNum: ${cacheObject.warnNum}
+BotId: ${cacheObject.botId}
+Token: ${cacheObject.token}
 DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
   }
 
