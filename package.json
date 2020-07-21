@@ -1,6 +1,6 @@
 {
   "name": "bot-sentry",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Monitor wechaty-puppet-donut login status",
   "private": true,
   "egg": {
