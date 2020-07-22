@@ -86,7 +86,7 @@ export default class HomeController extends Controller {
   private async getWxidListByToken(token: string) {
     const list = await this.getValue(token);
 
-    const strList = list.map(object => `【${object.botId}】\nBotName: ${object.botName}\nloginTime: ${moment(object.loginTime * 1000).format('MM-DD HH:mm:ss')}\n\n`);
+    const strList = list.map(object => `【${object.wxid}】\nBotName: ${object.botName}\nloginTime: ${moment(object.loginTime * 1000).format('MM-DD HH:mm:ss')}\n\n`);
     return strList.join('').toString();
   }
 
@@ -101,9 +101,10 @@ export default class HomeController extends Controller {
     const tokens = userList.map(user => user.tokens).reduce((pre, cur) => pre.concat(cur), []);
     const tokenObject = tokens.filter(t => t.token === token);
     if (tokenObject.length !== 1) {
-      throw new Error(`can not find tokenObject by token: ${token}, length: ${tokenObject.length}`);
+      this.logger.error(`can not find tokenObject by token: ${token}, length: ${tokenObject.length}`);
+      return 1
     }
-    return tokenObject[0].type || 0;
+    return tokenObject[0].type || 1;
   }
 
   private async startMonitor(message: Message) {
@@ -148,7 +149,10 @@ export default class HomeController extends Controller {
       };
       let botInfoList = await this.getValue(token);
       if (botInfoList && botInfoList.length) {
-        botInfoList.push(botInfo);
+        const existBot = botInfoList.filter(bot => bot.wxid === botInfo.wxid);
+        if (!existBot) {
+          botInfoList.push(botInfo);
+        }
       } else {
         botInfoList = [ botInfo ];
       }
@@ -183,7 +187,7 @@ export default class HomeController extends Controller {
         const deadFlag = cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? '【offline】' : '';
         cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? deadNum++ : onlineNum++;
         const object = {
-          content: `【${cacheObject.botName || cacheObject.botId}】${deadFlag}\nbotId: ${cacheObject.botId}\nDing/Dong: ${cacheObject.dingNum}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
+          content: `【${cacheObject.botName || cacheObject.botId}】${deadFlag}\nbotId: ${cacheObject.botId}\nDing/Dong: ${this.getRealDingNum(cacheObject)}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
           ddr,
         };
         ddrObjectList.push(object);
@@ -208,7 +212,7 @@ export default class HomeController extends Controller {
   private getRealDingNum(object: BotDingDongInfo) {
     const { dingNum, responseTime } = object;
     const now = Date.now();
-    const deadDingNum = responseTime ? Math.floor((now - responseTime) / 60 / 1000) : 0;
+    const deadDingNum = responseTime ? Math.floor((now / 1000 - responseTime) / 60) : 0;
     const realDingNum = dingNum + deadDingNum;
     return realDingNum;
   }
