@@ -180,7 +180,7 @@ export default class HomeController extends Controller {
     const ddrObjectList: DdrObject[] = [];
     for (const key of keys) {
       const cacheObject: BotDingDongInfo | undefined = await this.getValue(key);
-      if (cacheObject && cacheObject.botId) {
+      if (cacheObject && cacheObject.botId && cacheObject.dingNum) {
         const ddr = this.getDDR(cacheObject);
         totalDing += this.getRealDingNum(cacheObject);
         totalDong += cacheObject.dongNum;
