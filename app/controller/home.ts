@@ -218,7 +218,8 @@ export default class HomeController extends Controller {
   }
 
   private _getDDR(ding: number, dong: number) {
-    return ding === 0 ? 0.00 : Number(((dong / ding) * 100).toFixed(2));
+    const ddr = ding === 0 ? 0.00 : Number(((dong / ding) * 100).toFixed(2));
+    return ddr > 100 ? 100 : ddr;
   }
 
   private getDDR(object: BotDingDongInfo) {
