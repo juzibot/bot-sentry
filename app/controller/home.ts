@@ -123,13 +123,6 @@ export default class HomeController extends Controller {
       tokenType = await this.getTokenType(token);
     }
 
-    const old = await this.getValue(message.FromUserName);
-    let diff = 0;
-
-    if (old) {
-      diff = old.dingNum - old.dongNum;
-    }
-
     const cacheObject = {
       botId,
       botName,
@@ -137,7 +130,7 @@ export default class HomeController extends Controller {
       tokenType,
       startTime: parseInt(message.CreateTime, 10),
       warnNum: 0,
-      dingNum: 0 + diff,
+      dingNum: 0,
       dongNum: 0,
       responseTime: parseInt(message.CreateTime, 10),
     };
