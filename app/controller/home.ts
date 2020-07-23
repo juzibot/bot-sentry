@@ -104,7 +104,7 @@ export default class HomeController extends Controller {
       this.logger.error(`can not find tokenObject by token: ${token}, length: ${tokenObject.length}`);
       return 1
     }
-    return tokenObject[0].type || 1;
+    return tokenObject[0].type;
   }
 
   private async startMonitor(message: Message) {
