@@ -102,7 +102,7 @@ export default class HomeController extends Controller {
     const tokenObject = tokens.filter(t => t.token === token);
     if (tokenObject.length !== 1) {
       this.logger.error(`can not find tokenObject by token: ${token}, length: ${tokenObject.length}`);
-      return 1
+      return 1;
     }
     return tokenObject[0].type;
   }
@@ -123,6 +123,13 @@ export default class HomeController extends Controller {
       tokenType = await this.getTokenType(token);
     }
 
+    const old = await this.getValue(message.FromUserName);
+    let diff = 0;
+
+    if (old) {
+      diff = old.dingNum - old.dongNum;
+    }
+
     const cacheObject = {
       botId,
       botName,
@@ -130,7 +137,7 @@ export default class HomeController extends Controller {
       tokenType,
       startTime: parseInt(message.CreateTime, 10),
       warnNum: 0,
-      dingNum: 0,
+      dingNum: 0 + diff,
       dongNum: 0,
       responseTime: parseInt(message.CreateTime, 10),
     };
