@@ -113,51 +113,61 @@ export default class HomeController extends Controller {
     let botName = '';
     let token = '';
     let tokenType = '';
-    if (strArr.length === 3) {
-      botName = strArr[1];
-    }
 
     if (strArr.length === 4) {
       botName = strArr[1];
       token = strArr[2];
       tokenType = await this.getTokenType(token);
+    } else {
+      return;
     }
 
-    const cacheObject = {
-      botId,
-      botName,
-      token: '',
-      tokenType,
-      startTime: parseInt(message.CreateTime, 10),
-      warnNum: 0,
-      dingNum: 0,
-      dongNum: 0,
-      responseTime: parseInt(message.CreateTime, 10),
-    };
-    if (token) {
-      cacheObject.token = token;
+    if (!token) {
+      return;
     }
-    await this.setValue(message.FromUserName, cacheObject);
-    await this.setValue(botId, message.FromUserName);
 
-    if (token) {
-      const botInfo = {
-        wxid: botId,
+
+    const obj = await this.getValue(message.FromUserName);
+    if (obj) {
+      obj.warnNum = 0;
+      obj.responseTime = Math.floor(Date.now() / 1000);
+      await this.setValue(message.FromUserName, obj);
+    } else {
+      const cacheObject = {
+        botId,
         botName,
         token,
-        loginTime: cacheObject.startTime,
+        tokenType,
+        startTime: parseInt(message.CreateTime, 10),
+        warnNum: 0,
+        dingNum: 0,
+        dongNum: 0,
+        responseTime: parseInt(message.CreateTime, 10),
       };
-      let botInfoList = await this.getValue(token);
-      if (botInfoList && botInfoList.length) {
-        const existBot = botInfoList.filter(bot => bot.wxid === botInfo.wxid);
-        if (!existBot) {
-          botInfoList.push(botInfo);
-        }
-      } else {
-        botInfoList = [ botInfo ];
-      }
-      await this.setValue(token, botInfoList);
+      await this.setValue(message.FromUserName, cacheObject);
+      await this.setValue(botId, message.FromUserName);
+
+      await this.addWxidToToken(botId, botName, token);
     }
+  }
+
+  private async addWxidToToken(botId: string, botName: string, token: string) {
+    const botInfo = {
+      wxid: botId,
+      botName,
+      token,
+      loginTime: Date.now(),
+    };
+    let botInfoList = await this.getValue(token);
+    if (botInfoList && botInfoList.length) {
+      const existBot = botInfoList.filter(bot => bot.wxid === botInfo.wxid);
+      if (existBot && !existBot.length) {
+        botInfoList.push(botInfo);
+      }
+    } else {
+      botInfoList = [ botInfo ];
+    }
+    await this.setValue(token, botInfoList);
   }
 
   private async processDongMessage(message: Message): Promise<void> {
@@ -210,10 +220,9 @@ export default class HomeController extends Controller {
   }
 
   private getRealDingNum(object: BotDingDongInfo) {
-    const { dingNum, responseTime } = object;
+    const { startTime } = object;
     const now = Date.now();
-    const deadDingNum = responseTime ? Math.floor((now / 1000 - responseTime) / 60) : 0;
-    const realDingNum = dingNum + deadDingNum;
+    const realDingNum = startTime ? Math.floor((now / 1000 - startTime) / 60) : 0;;
     return realDingNum;
   }
 
@@ -332,8 +341,7 @@ LoginTime: ${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
 LogoutTime: ${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
 DuringTime: ${duringTime}
 BotId: ${cacheObject.botId}
-Token: ${cacheObject.token}
-DDR: ${(cacheObject.dongNum / cacheObject.dingNum * 100).toFixed(2)}%`;
+Token: ${cacheObject.token}`;
   }
 
   private static secondsToDhms(seconds: number) {
