@@ -15,7 +15,10 @@ export const NOTIFY_LIST = [
   'owRfxwoWHK_iwYZxuFmXFjF0vbqo', // su
   'owRfxwrr-SCyLFGmCXBX8A_TzzoU', // gao
   // 'owRfxwjXYizqQxxEN_Y0YitRPUH0', // yin
+  'owRfxwtsRGulmOxiyDrHVupd2gic', // Juzi.Bot
 ];
+
+export const BOT_SENTRY_NOTIFIER = 'bot_sentry_notifier'
 
 export const PRIVATE_LIST = [
   '#clear',

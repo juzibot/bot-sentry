@@ -1,7 +1,7 @@
 import { Subscription } from 'egg';
 import { sendMessage } from '../util/message';
 import HomeController from '../controller/home';
-import { NOTIFY_LIST, WARN_OPTIONS } from '../../config/config';
+import { NOTIFY_LIST, WARN_OPTIONS, BOT_SENTRY_NOTIFIER } from '../../config/config';
 
 class Warning extends Subscription {
   /**
@@ -19,7 +19,7 @@ class Warning extends Subscription {
       type: 'all',
       // cron: '0 0 3 * * *',
       interval: '1m',
-      immediate: false,
+      immediate: true,
     };
   }
 
@@ -27,6 +27,13 @@ class Warning extends Subscription {
     const { ctx, app } = this;
     const keys = await app.redis.keys('*');
     ctx.logger.info(`Ready to send #ding for each bot, bot length: ${keys.length}`);
+
+    // set notifier list
+    const _list = await app.redis.get(BOT_SENTRY_NOTIFIER) || JSON.stringify(NOTIFY_LIST)
+    if (!_list) {
+      await app.redis.set(BOT_SENTRY_NOTIFIER, _list)
+    }
+    const list = JSON.parse(_list)
 
     keys.forEach(async (key: string) => {
       // send #ding
@@ -47,7 +54,7 @@ class Warning extends Subscription {
         const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
         if (cacheObject.warnNum && cacheObject.warnNum === WARN_OPTIONS.WARNING_TIMES && flag > WARN_OPTIONS.TIMEOUT) {
           const warnMessage = HomeController.warnMessage(cacheObject);
-          NOTIFY_LIST.map(id => sendMessage(warnMessage, id));
+          list.map(id => sendMessage(warnMessage, id));
           cacheObject.warnNum += 1;
           await app.redis.set(key, JSON.stringify(cacheObject));
           return;

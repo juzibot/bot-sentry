@@ -3,7 +3,7 @@ import crypto = require('crypto');
 import moment = require('moment');
 
 import { xmlToJson } from '../util/xmlToJson';
-import { PRIVATE_LIST, WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE } from '../../config/config';
+import { PRIVATE_LIST, WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE, BOT_SENTRY_NOTIFIER } from '../../config/config';
 import { Message, BotDingDongInfo, DdrObject } from './schema';
 import { sendMessage } from '../util/message';
 
@@ -78,7 +78,14 @@ export default class HomeController extends Controller {
       const token = message.Content.split('#')[0];
       const wxidListOfToken = await this.getWxidListByToken(token);
       return this.responseMessage(message, wxidListOfToken);
+    } else if (this.checkCommand(message, '#I WANT TO RECEIVE WARNING NOTIFIER!')) {
+      const user = message.FromUserName;
+      const userList = await this.getValue(BOT_SENTRY_NOTIFIER);
+      userList.push(user);
+      await this.setValue(BOT_SENTRY_NOTIFIER, userList);
+      return this.responseMessage(message, 'Done!');
     }
+
     const commandInfo = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot';
     return this.responseMessage(message, commandInfo);
   }
@@ -264,7 +271,7 @@ export default class HomeController extends Controller {
     }
     const object = await this.getValue(key);
     const ddr = this.getDDR(object);
-    const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${object.dingNum} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
+    const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${this.getRealDingNum(object)} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
     return info;
   }
 
