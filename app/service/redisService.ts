@@ -28,7 +28,6 @@ export default class RedisService extends Service {
       }
     }
     return null;
-
   }
 
   public async setValue(key: string, value: any): Promise<void> {

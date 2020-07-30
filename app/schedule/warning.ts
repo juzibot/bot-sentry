@@ -1,6 +1,6 @@
 import { Subscription } from 'egg';
 import { sendMessage } from '../util/message';
-import HomeController from '../controller/home';
+import MessageController from '../controller/message';
 import { NOTIFY_LIST, WARN_OPTIONS, BOT_SENTRY_NOTIFIER } from '../../config/config';
 
 class Warning extends Subscription {
@@ -48,7 +48,7 @@ class Warning extends Subscription {
       }
 
       const cacheObject = JSON.parse(_cacheObject);
-      if (HomeController.type.includes(cacheObject.tokenType)) {
+      if (MessageController.type.includes(cacheObject.message)) {
         if (cacheObject.botId && cacheObject.warnNum < WARN_OPTIONS.WARNING_TIMES) {
           await sendMessage('#ding', key);
           cacheObject.dingNum += 1;
@@ -58,7 +58,7 @@ class Warning extends Subscription {
         // warning
         const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
         if (cacheObject.warnNum && cacheObject.warnNum === WARN_OPTIONS.WARNING_TIMES && flag > WARN_OPTIONS.TIMEOUT) {
-          const warnMessage = HomeController.warnMessage(cacheObject);
+          const warnMessage = ctx.service.commandService.warnMessage(cacheObject);
           list.map(id => sendMessage(warnMessage, id));
           cacheObject.warnNum += 1;
           await app.redis.set(key, JSON.stringify(cacheObject));

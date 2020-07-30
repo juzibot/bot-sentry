@@ -1,6 +1,6 @@
 import { Service } from 'egg';
 import { Message, DdrObject, BotDingDongInfo } from '../controller/schema';
-import { WARN_OPTIONS, NOTIFY_LIST } from '../../config/config';
+import { WARN_OPTIONS, NOTIFY_LIST, BOT_SENTRY_NOTIFIER } from '../../config/config';
 import { sendMessage } from '../util/message';
 import moment = require('moment');
 
@@ -118,13 +118,13 @@ export default class CommandService extends Service {
     for (const key of keys) {
       const cacheObject: BotDingDongInfo | undefined = await ctx.service.redisService.getValue(key);
       if (cacheObject && cacheObject.botId && cacheObject.dingNum) {
-        const ddr = this.getDDR(cacheObject);
-        totalDing += this.getRealDingNum(cacheObject);
+        const ddr = ctx.helper.getDDR(cacheObject);
+        totalDing += ctx.helper.getRealDingNum(cacheObject);
         totalDong += cacheObject.dongNum;
         const deadFlag = cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? '【offline】' : '';
         cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? deadNum++ : onlineNum++;
         const object = {
-          content: `【${cacheObject.botName || cacheObject.botId}】${deadFlag}\nbotId: ${cacheObject.botId}\nDing/Dong: ${this.getRealDingNum(cacheObject)}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
+          content: `【${cacheObject.botName || cacheObject.botId}】${deadFlag}\nbotId: ${cacheObject.botId}\nDing/Dong: ${ctx.helper.getRealDingNum(cacheObject)}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
           ddr,
         };
         ddrObjectList.push(object);
@@ -136,7 +136,7 @@ export default class CommandService extends Service {
     while (_ddrObjectList.length !== 0) {
       const partial = _ddrObjectList.splice(0, MAX);
       page++;
-      const totalDDR = this._getDDR(totalDing, totalDong);
+      const totalDDR = ctx.helper.calculateDDR(totalDing, totalDong);
       const line = '--------------------------\n';
       const pageStr = totalPage === 1 ? '' : `totalPage: ${totalPage}, curPage: ${page}\n`;
       const titleAbstract = `【Statistics】\ntotalDDR: ${totalDDR}%\nonline: ${onlineNum}, offline: ${deadNum}\n${pageStr}${line}`;
@@ -158,7 +158,7 @@ export default class CommandService extends Service {
     for (const key of keys) {
       const object = await ctx.service.redisService.getValue(key);
       if (object && object.botId && object.warnNum >= WARN_OPTIONS.WARNING_TIMES) {
-        const ddr = this.getDDR(object);
+        const ddr = ctx.helper.getDDR(object);
         deadList.push(`【${object.botName || object.botId}】\nBotId: ${object.botId}\nDeadTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\nDDR: ${ddr}%\n\n`);
       }
     }
@@ -176,8 +176,8 @@ export default class CommandService extends Service {
       return `Wrong botId[${botId}], please check it again!`;
     }
     const object = await ctx.service.redisService.getValue(key);
-    const ddr = this.getDDR(object);
-    const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${this.getRealDingNum(object)} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
+    const ddr = ctx.helper.getDDR(object);
+    const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${ctx.helper.getRealDingNum(object)} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
     return info;
   }
 
@@ -219,8 +219,8 @@ export default class CommandService extends Service {
     if (!key) {
       return `Wrong botId[${botId}], please check it again!`;
     }
-    await this.deleteKey(botId);
-    await this.deleteKey(key);
+    await ctx.service.redisService.deleteKey(botId);
+    await ctx.service.redisService.deleteKey(key);
     return 'already deleted!';
   }
 
@@ -245,6 +245,7 @@ export default class CommandService extends Service {
     const userList = await ctx.service.redisService.getValue(BOT_SENTRY_NOTIFIER);
     userList.push(user);
     await ctx.service.redisService.setValue(BOT_SENTRY_NOTIFIER, userList);
+    return 'Done!';
   }
 
   public async unSubscribeWarningMessage(message: Message) {
@@ -254,10 +255,11 @@ export default class CommandService extends Service {
     const userList = await ctx.service.redisService.getValue(BOT_SENTRY_NOTIFIER);
     const index = userList.indexOf(user);
     if (index === -1) {
-      return this.responseMessage(message, 'You are not in NOTIFIER LIST!');
+      return 'You are not in NOTIFIER LIST!';
     }
     userList.splice(index, 1);
     await ctx.service.redisService.setValue(BOT_SENTRY_NOTIFIER, userList);
+    return 'Done!';
   }
 
   public async getWxidListByToken(token: string) {
@@ -269,8 +271,10 @@ export default class CommandService extends Service {
     return strList.join('').toString();
   }
 
-  public static warnMessage(cacheObject: BotDingDongInfo): string {
-    const duringTime = cacheObject.responseTime === cacheObject.startTime ? '0s' : this.secondsToDhms(cacheObject.responseTime - cacheObject.startTime);
+  public warnMessage(cacheObject: BotDingDongInfo): string {
+    const { ctx } = this;
+
+    const duringTime = cacheObject.responseTime === cacheObject.startTime ? '0s' : ctx.helper.secondsToDhms(cacheObject.responseTime - cacheObject.startTime);
     return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】
 LoginTime: ${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
 LogoutTime: ${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
@@ -279,38 +283,4 @@ BotId: ${cacheObject.botId}
 Token: ${cacheObject.token}`;
   }
 
-  /**
-   * helper functions
-   */
-
-  public static secondsToDhms(seconds: number) {
-    const d = Math.floor(seconds / (3600 * 24));
-    const h = Math.floor(seconds % (3600 * 24) / 3600);
-    const m = Math.floor(seconds % 3600 / 60);
-    const s = Math.floor(seconds % 60);
-
-    const dDisplay = d > 0 ? d + 'd ' : '';
-    const hDisplay = h > 0 ? h + 'h ' : '';
-    const mDisplay = m > 0 ? m + 'm ' : '';
-    const sDisplay = s > 0 ? s + 's' : '';
-    return dDisplay + hDisplay + mDisplay + sDisplay;
-  }
-
-  public getRealDingNum(object: BotDingDongInfo) {
-    const { startTime } = object;
-    const now = Date.now();
-    const realDingNum = startTime ? Math.floor((now / 1000 - startTime) / 60) : 0;
-    return realDingNum;
-  }
-
-  public _getDDR(ding: number, dong: number) {
-    const ddr = ding === 0 ? 0.00 : Number(((dong / ding) * 100).toFixed(2));
-    return ddr > 100 ? 100 : ddr;
-  }
-
-  public getDDR(object: BotDingDongInfo) {
-    const { dongNum } = object;
-    const realDingNum = this.getRealDingNum(object);
-    return this._getDDR(realDingNum, dongNum);
-  }
 }

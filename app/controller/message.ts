@@ -5,7 +5,7 @@ import { xmlToJson } from '../util/xmlToJson';
 import { PRIVATE_LIST, WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE } from '../../config/config';
 import { Message, COMMAND_LIST, COMMAND } from './schema';
 
-export default class HomeController extends Controller {
+export default class MessageController extends Controller {
 
   public static type = [ 1 ];
 
@@ -47,58 +47,51 @@ export default class HomeController extends Controller {
       case COMMAND.DING_START:
         await ctx.service.commandService.startMonitor(message);
         responseData = INIT_MESSAGE;
-        break
+        break;
       case COMMAND.DONG:
         await ctx.service.commandService.processDongMessage(message);
-        responseData = '@received-dong-message'
-        break
+        responseData = '@received-dong-message';
+        break;
       case COMMAND.DDR:
-        const ddrString = await ctx.service.commandService.ddrList(message);
-        responseData = ddrString
-        break
+        responseData = await ctx.service.commandService.ddrList(message);
+        break;
       case COMMAND.DEAD:
-        const deadString = await ctx.service.commandService.deadList();
-        responseData = deadString
-        break
+        responseData = await ctx.service.commandService.deadList();
+        break;
       case COMMAND.INFO:
-        const botInfo = await ctx.service.commandService.getBotInfo(key);
-        responseData = botInfo
-        break
+        responseData = await ctx.service.commandService.getBotInfo(key);
+        break;
       case COMMAND.CLEAR:
         await ctx.service.commandService.clearWarnNumByBotId(key);
-        responseData = 'already cleared!'
-        break
+        responseData = 'already cleared!';
+        break;
       case COMMAND.RESET:
         await ctx.service.commandService.resetDingDongByBotId(key);
-        responseData = 'already reset!'
-        break
+        responseData = 'already reset!';
+        break;
       case COMMAND.DEL:
-        const resMsg = await ctx.service.commandService.delObjectByBotId(message, key);
-        responseData = resMsg
-        break
+        responseData = await ctx.service.commandService.delObjectByBotId(message, key);
+        break;
       case COMMAND.ZW:
         await ctx.service.commandService.clearWarnNum();
-        responseData = 'already cleared all!'
-        break
+        responseData = 'already cleared all!';
+        break;
       case COMMAND.TYPE:
-        HomeController.type = key.split(',').map(n => Number(n));
-        responseData = `set monitor type to ${key}`
-        break
+        MessageController.type = key.split(',').map(n => Number(n));
+        responseData = `set monitor type to ${key}`;
+        break;
       case COMMAND.TOKEN:
-        const wxidListOfToken = await ctx.service.commandService.getWxidListByToken(key);
-        responseData = wxidListOfToken
-        break
+        responseData = await ctx.service.commandService.getWxidListByToken(key);
+        break;
       case COMMAND.SUBSCRIBE:
-        await ctx.service.commandService.subscribeWarningMessage(message)
-        responseData = 'Done!'
-        break
+        responseData = await ctx.service.commandService.subscribeWarningMessage(message);
+        break;
       case COMMAND.UNSUBSCRIBE:
-        await ctx.service.commandService.unSubscribeWarningMessage(message);
-        responseData = 'Done!'
-        break
+        responseData = await ctx.service.commandService.unSubscribeWarningMessage(message);
+        break;
       default:
         responseData = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot';
-        break
+        break;
     }
     return this.responseMessage(message, responseData);
   }
