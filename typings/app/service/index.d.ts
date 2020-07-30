@@ -8,12 +8,14 @@ type CanExportFunc = AnyFunc<Promise<any>> | AnyFunc<IterableIterator<any>>;
 type AutoInstanceType<T, U = T extends CanExportFunc ? T : T extends AnyFunc ? ReturnType<T> : T> = U extends AnyClass ? InstanceType<U> : U;
 import ExportTest from '../../../app/service/Test';
 import ExportCommandService from '../../../app/service/commandService';
+import ExportMessageService from '../../../app/service/messageService';
 import ExportRedisService from '../../../app/service/redisService';
 
 declare module 'egg' {
   interface IService {
     test: AutoInstanceType<typeof ExportTest>;
     commandService: AutoInstanceType<typeof ExportCommandService>;
+    messageService: AutoInstanceType<typeof ExportMessageService>;
     redisService: AutoInstanceType<typeof ExportRedisService>;
   }
 }

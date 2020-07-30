@@ -36,7 +36,7 @@ export default class RequestClient {
     if (body.errcode !== 0) {
       console.log(`
       ==================================================
-      ERROR REQUEST BODY : 
+      ERROR REQUEST BODY :
       ${JSON.stringify(body)}
       ==================================================
       `);

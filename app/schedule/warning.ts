@@ -1,5 +1,4 @@
 import { Subscription } from 'egg';
-import { sendMessage } from '../util/message';
 import MessageController from '../controller/message';
 import { NOTIFY_LIST, WARN_OPTIONS, BOT_SENTRY_NOTIFIER } from '../../config/config';
 
@@ -29,15 +28,15 @@ class Warning extends Subscription {
     ctx.logger.info(`Ready to send #ding for each bot, bot length: ${keys.length}`);
 
     // set notifier list
-    let _list = await app.redis.get(BOT_SENTRY_NOTIFIER);
-    if (!_list) {
+    let notifierListStr = await app.redis.get(BOT_SENTRY_NOTIFIER);
+    if (!notifierListStr) {
       await app.redis.set(BOT_SENTRY_NOTIFIER, JSON.stringify(NOTIFY_LIST));
-      _list = JSON.stringify(NOTIFY_LIST);
+      notifierListStr = JSON.stringify(NOTIFY_LIST);
     }
-    const list = JSON.parse(_list);
+    const notifierList = JSON.parse(notifierListStr);
     ctx.logger.info(`
     =======================================
-    list: ${JSON.stringify(list)}
+    Notifier List: ${JSON.stringify(notifierList)}
     =======================================
     `);
     keys.forEach(async (key: string) => {
@@ -50,7 +49,7 @@ class Warning extends Subscription {
       const cacheObject = JSON.parse(_cacheObject);
       if (MessageController.type.includes(cacheObject.message)) {
         if (cacheObject.botId && cacheObject.warnNum < WARN_OPTIONS.WARNING_TIMES) {
-          await sendMessage('#ding', key);
+          await ctx.service.messageService.sendMessage('#ding', key);
           cacheObject.dingNum += 1;
           await app.redis.set(key, JSON.stringify(cacheObject));
         }
@@ -59,7 +58,7 @@ class Warning extends Subscription {
         const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
         if (cacheObject.warnNum && cacheObject.warnNum === WARN_OPTIONS.WARNING_TIMES && flag > WARN_OPTIONS.TIMEOUT) {
           const warnMessage = ctx.service.commandService.warnMessage(cacheObject);
-          list.map(id => sendMessage(warnMessage, id));
+          notifierList.map(id => ctx.service.messageService.sendMessage(warnMessage, id));
           cacheObject.warnNum += 1;
           await app.redis.set(key, JSON.stringify(cacheObject));
           return;

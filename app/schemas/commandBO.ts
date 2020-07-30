@@ -1,0 +1,31 @@
+export enum COMMAND {
+  DING_START = '#ding-start',
+  DONG = '#dong',
+  DDR = '#ddr',
+  DEAD = '#dead',
+  INFO = '#info',
+  CLEAR = '#clear',
+  RESET = '#reset',
+  DEL = '#del',
+  ZW = '#ZW',
+  TYPE = '#type',
+  TOKEN = '#token',
+  SUBSCRIBE = '#I WANT TO RECEIVE WARNING NOTIFIER!',
+  UNSUBSCRIBE = '#I DO NOT WANT TO RECEIVE WARNING NOTIFIER ANY MORE!',
+}
+
+export const COMMAND_LIST = [
+  COMMAND.DING_START,
+  COMMAND.DONG,
+  COMMAND.DDR,
+  COMMAND.DEAD,
+  COMMAND.INFO,
+  COMMAND.CLEAR,
+  COMMAND.RESET,
+  COMMAND.DEL,
+  COMMAND.ZW,
+  COMMAND.TYPE,
+  COMMAND.TOKEN,
+  COMMAND.SUBSCRIBE,
+  COMMAND.UNSUBSCRIBE,
+];

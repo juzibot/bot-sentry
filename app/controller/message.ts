@@ -1,17 +1,16 @@
 import { Controller } from 'egg';
 import crypto = require('crypto');
 
-import { xmlToJson } from '../util/xmlToJson';
 import { PRIVATE_LIST, WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE } from '../../config/config';
-import { Message, COMMAND_LIST, COMMAND } from './schema';
+import { COMMAND_LIST, COMMAND } from '../schemas/commandBO';
+import { Message } from '../schemas/messageBO';
 
 export default class MessageController extends Controller {
 
   public static type = [ 1 ];
 
   public async check() {
-    const { ctx, logger } = this;
-    logger.info(`check(), time: ${new Date()}`);
+    const { ctx } = this;
     const query = ctx.query;
     const { signature, timestamp, nonce, echostr } = query;
     const str = [ timestamp, nonce, WARN_OPTIONS.MY_TOKEN ].sort().join('');
@@ -23,11 +22,10 @@ export default class MessageController extends Controller {
   }
 
   public async receiveMessage() {
-    const { ctx, logger } = this;
-    logger.info('receiveMessage()');
+    const { ctx } = this;
     const xmlBody = ctx.request.body;
 
-    const xmlObject = await xmlToJson(xmlBody);
+    const xmlObject = await ctx.helper.xmlToJson(xmlBody);
     const message: Message = xmlObject.xml;
 
     ctx.body = await this.processMessage(message);
@@ -35,10 +33,17 @@ export default class MessageController extends Controller {
 
   private async processMessage(message: Message) {
     const { ctx } = this;
+
     if (message.MsgType !== 'text') {
       return;
     }
-    const command = COMMAND_LIST.map(_command => this.checkCommand(message, _command)).filter(str => !!str)[0];
+
+    const matchedCommands = COMMAND_LIST.map(_command => this.checkCommand(message, _command)).filter(str => !!str);
+    if (!matchedCommands || !matchedCommands.length) {
+      return this.responseMessage(message, 'Something wrong with your command, please check it again.');
+    }
+    const command = matchedCommands[0];
+
     let responseData = '';
 
     const key = message.Content.split('#')[0];

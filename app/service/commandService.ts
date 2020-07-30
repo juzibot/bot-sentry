@@ -1,8 +1,7 @@
 import { Service } from 'egg';
-import { Message, DdrObject, BotDingDongInfo } from '../controller/schema';
 import { WARN_OPTIONS, NOTIFY_LIST, BOT_SENTRY_NOTIFIER } from '../../config/config';
-import { sendMessage } from '../util/message';
 import moment = require('moment');
+import { Message, DdrObject, BotDingDongInfo } from '../schemas/messageBO';
 
 /**
  * CommandService Service
@@ -141,7 +140,7 @@ export default class CommandService extends Service {
       const pageStr = totalPage === 1 ? '' : `totalPage: ${totalPage}, curPage: ${page}\n`;
       const titleAbstract = `【Statistics】\ntotalDDR: ${totalDDR}%\nonline: ${onlineNum}, offline: ${deadNum}\n${pageStr}${line}`;
       const msg = titleAbstract + partial.join('');
-      await sendMessage(msg, message.FromUserName);
+      await ctx.service.messageService.sendMessage(msg, message.FromUserName);
     }
     return totalPage === 0 ? 'No alive bot.' : 'All bots info load finished!';
   }
@@ -279,8 +278,7 @@ export default class CommandService extends Service {
 LoginTime: ${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
 LogoutTime: ${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
 DuringTime: ${duringTime}
-BotId: ${cacheObject.botId}
-Token: ${cacheObject.token}`;
+BotId: ${cacheObject.botId}`;
   }
 
 }
