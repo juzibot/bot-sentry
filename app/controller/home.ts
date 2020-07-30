@@ -84,6 +84,16 @@ export default class HomeController extends Controller {
       userList.push(user);
       await this.setValue(BOT_SENTRY_NOTIFIER, userList);
       return this.responseMessage(message, 'Done!');
+    } else if (this.checkCommand(message, '#I DO NOT WANT TO RECEIVE WARNING NOTIFIER ANY MORE!')) {
+      const user = message.FromUserName;
+      const userList = await this.getValue(BOT_SENTRY_NOTIFIER);
+      const index = userList.indexOf(user);
+      if (index === -1) {
+        return this.responseMessage(message, 'You are not in NOTIFIER LIST!');
+      }
+      userList.splice(index, 1);
+      await this.setValue(BOT_SENTRY_NOTIFIER, userList);
+      return this.responseMessage(message, 'Done!');
     }
 
     const commandInfo = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot';
@@ -132,7 +142,6 @@ export default class HomeController extends Controller {
     if (!token) {
       return;
     }
-
 
     const obj = await this.getValue(message.FromUserName);
     if (obj) {
@@ -229,7 +238,7 @@ export default class HomeController extends Controller {
   private getRealDingNum(object: BotDingDongInfo) {
     const { startTime } = object;
     const now = Date.now();
-    const realDingNum = startTime ? Math.floor((now / 1000 - startTime) / 60) : 0;;
+    const realDingNum = startTime ? Math.floor((now / 1000 - startTime) / 60) : 0;
     return realDingNum;
   }
 

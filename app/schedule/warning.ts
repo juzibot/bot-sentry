@@ -29,17 +29,17 @@ class Warning extends Subscription {
     ctx.logger.info(`Ready to send #ding for each bot, bot length: ${keys.length}`);
 
     // set notifier list
-    let _list = await app.redis.get(BOT_SENTRY_NOTIFIER)
+    let _list = await app.redis.get(BOT_SENTRY_NOTIFIER);
     if (!_list) {
-      await app.redis.set(BOT_SENTRY_NOTIFIER, JSON.stringify(NOTIFY_LIST))
-      _list = JSON.stringify(NOTIFY_LIST)
+      await app.redis.set(BOT_SENTRY_NOTIFIER, JSON.stringify(NOTIFY_LIST));
+      _list = JSON.stringify(NOTIFY_LIST);
     }
-    const list = JSON.parse(_list)
+    const list = JSON.parse(_list);
     ctx.logger.info(`
     =======================================
     list: ${JSON.stringify(list)}
     =======================================
-    `)
+    `);
     keys.forEach(async (key: string) => {
       // send #ding
       const _cacheObject = await app.redis.get(key);

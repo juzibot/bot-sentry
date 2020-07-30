@@ -18,7 +18,7 @@ export const NOTIFY_LIST = [
   'owRfxwtsRGulmOxiyDrHVupd2gic', // Juzi.Bot
 ];
 
-export const BOT_SENTRY_NOTIFIER = 'bot_sentry_notifier'
+export const BOT_SENTRY_NOTIFIER = 'bot_sentry_notifier';
 
 export const PRIVATE_LIST = [
   '#clear',
