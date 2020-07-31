@@ -16,10 +16,8 @@ export default class RedisService extends Service {
   }
 
   public async getValue(key: string): Promise<any> {
-    const { logger, app } = this;
-    logger.info(`getValue(${key})`);
+    const { app } = this;
     const objectStr = await app.redis.get(key);
-    console.log(`objectStr : ${objectStr}`);
     if (objectStr) {
       try {
         return JSON.parse(objectStr);
@@ -31,8 +29,7 @@ export default class RedisService extends Service {
   }
 
   public async setValue(key: string, value: any): Promise<void> {
-    const { logger, app } = this;
-    logger.info(`setValue(${key}, ${JSON.stringify(value)})`);
+    const { app } = this;
     await app.redis.set(key, JSON.stringify(value));
   }
 
