@@ -1,4 +1,6 @@
 export enum COMMAND {
+  UNKNOWN_COMMAND = 'UNKNOWN_COMMAND',
+  NO_PERMITION = 'NO_PERMITION',
   DING_START = '#ding-start',
   DONG = '#dong',
   DDR = '#ddr',
@@ -28,4 +30,11 @@ export const COMMAND_LIST = [
   COMMAND.TOKEN,
   COMMAND.SUBSCRIBE,
   COMMAND.UNSUBSCRIBE,
+];
+
+export const PRIVATE_LIST = [
+  COMMAND.CLEAR,
+  COMMAND.RESET,
+  COMMAND.DEL,
+  COMMAND.ZW,
 ];

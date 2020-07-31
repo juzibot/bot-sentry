@@ -1,8 +1,8 @@
 import { Controller } from 'egg';
 import crypto = require('crypto');
 
-import { PRIVATE_LIST, WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE } from '../../config/config';
-import { COMMAND_LIST, COMMAND } from '../schemas/commandBO';
+import { WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE } from '../../config/config';
+import { PRIVATE_LIST, COMMAND_LIST, COMMAND } from '../schemas/commandBO';
 import { Message } from '../schemas/messageBO';
 
 export default class MessageController extends Controller {
@@ -32,22 +32,47 @@ export default class MessageController extends Controller {
   }
 
   private async processMessage(message: Message) {
+    if (message.MsgType !== 'text') {
+      return this.responseMessage(message, 'This message type is not support');
+    }
+
+    const data = this.checkCommand(message);
+    if (!data.status) {
+      return data.command
+    }
+
+    return this.processCommand(message, data.command as COMMAND);
+  }
+
+  private checkCommand(message: Message) {
+    const matchedCommandList = COMMAND_LIST.map(command => this.matchCommand(message, command)).filter(res => res.code);
+
+    if (!matchedCommandList || !matchedCommandList.length) {
+      return {
+        status: false,
+        command: this.responseMessage(message, 'Something wrong with your command, please check it again.'),
+      };
+    }
+
+    const command = matchedCommandList[0].command;
+    if (command === COMMAND.NO_PERMITION) {
+      return {
+        status: false,
+        command: this.responseMessage(message, 'You have no permition with this command.'),
+      };
+    }
+
+    return {
+      status: true,
+      command,
+    };
+  }
+
+  private async processCommand(message: Message, command: COMMAND) {
     const { ctx } = this;
 
-    if (message.MsgType !== 'text') {
-      return;
-    }
-
-    const matchedCommands = COMMAND_LIST.map(_command => this.checkCommand(message, _command)).filter(str => !!str);
-    if (!matchedCommands || !matchedCommands.length) {
-      return this.responseMessage(message, 'Something wrong with your command, please check it again.');
-    }
-    const command = matchedCommands[0];
-
     let responseData = '';
-
     const key = message.Content.split('#')[0];
-
     switch (command) {
       case COMMAND.DING_START:
         await ctx.service.commandService.startMonitor(message);
@@ -101,11 +126,29 @@ export default class MessageController extends Controller {
     return this.responseMessage(message, responseData);
   }
 
-  private checkCommand(message: Message, command: string) {
-    if (PRIVATE_LIST.includes(command) && message.FromUserName !== NOTIFY_LIST[0]) {
-      return 'NO_PERMITION';
+  private matchCommand(message: Message, command: COMMAND) {
+    const content = message.Content;
+    const reg =new RegExp(`${command}$`,"gim");
+
+    const isMatch = reg.test(content);
+    if (!isMatch) {
+      return {
+        code: false,
+        command: COMMAND.UNKNOWN_COMMAND,
+      };
     }
-    return message.Content.includes(command) ? command : 'UNKNOWN_COMMAND';
+
+    if (PRIVATE_LIST.includes(command) && message.FromUserName !== NOTIFY_LIST[0]) {
+      return {
+        code: true,
+        command: COMMAND.NO_PERMITION,
+      }
+    }
+
+    return {
+      code: true,
+      command,
+    };
   }
 
   private responseMessage(message: Message, text: string): string {
