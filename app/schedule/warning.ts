@@ -47,7 +47,7 @@ class Warning extends Subscription {
       }
 
       const cacheObject = JSON.parse(_cacheObject);
-      if (MessageController.type.includes(cacheObject.message)) {
+      if (MessageController.type.includes(cacheObject.tokenType)) {
         if (cacheObject.botId && cacheObject.warnNum < WARN_OPTIONS.WARNING_TIMES) {
           await ctx.service.messageService.sendMessage('#ding', key);
           cacheObject.dingNum += 1;
