@@ -53,13 +53,13 @@ export default class MessageService extends Service {
           value: `微信：${wxid} 掉线报警`,
         },
         performance: {
-          value: '微信号5分钟内未响应系统监控消息，可能发生故障或退出登录。',
+          value: '微信号在规定时间内未对系统监控消息做出响应，可能发生系统故障或用户主动退出登录。',
         },
         time: {
           value: time,
         },
         remark: {
-          value: remark,
+          value: `【详细信息】\n${remark}`,
         },
       },
     };

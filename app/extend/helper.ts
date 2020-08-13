@@ -1,5 +1,6 @@
 import { parseString } from 'xml2js';
 import { BotDingDongInfo, XMLObject } from '../schemas/messageBO';
+import moment = require('moment');
 
 module.exports = {
   getRealDingNum(object: BotDingDongInfo) {
@@ -35,6 +36,12 @@ module.exports = {
     const mDisplay = m > 0 ? this.formatNumber(m) + 'm ' : '';
     const sDisplay = s > 0 ? this.formatNumber(s) + 's' : '';
     return dDisplay + hDisplay + mDisplay + sDisplay;
+  },
+
+  getBaseInfo(object: BotDingDongInfo) {
+    const duringTime = object.responseTime === object.loginTime ? '0s' : this.secondsToDhms(object.responseTime - object.loginTime);
+    const info = `登录时间: ${moment(object.loginTime * 1000).format('MM-DD HH:mm:ss')}\n登出事件: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\n在线时长: ${duringTime}`;
+    return info;
   },
 
   xmlToJson(xml: string): Promise<XMLObject> {

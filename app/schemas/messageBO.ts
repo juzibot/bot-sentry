@@ -16,6 +16,7 @@ export interface BotDingDongInfo {
   dongNum: number;
   warnNum: number;
   startTime: number;
+  loginTime: number;
   responseTime: number;
 }
 
@@ -30,6 +31,6 @@ export interface XMLObject {
 
 export interface TemplateObject {
   wxid: string;
-  time: number;
+  time: string;
   remark: string;
 }

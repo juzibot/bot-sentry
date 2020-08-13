@@ -119,9 +119,6 @@ export default class MessageController extends Controller {
       case COMMAND.UNSUBSCRIBE:
         responseData = await ctx.service.commandService.unSubscribeWarningMessage(message);
         break;
-      case COMMAND.TEST:
-        responseData = await ctx.service.commandService.test(message);
-        break;
       default:
         responseData = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot';
         break;

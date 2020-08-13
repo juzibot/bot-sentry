@@ -1,7 +1,7 @@
 import { Service } from 'egg';
 import { WARN_OPTIONS, NOTIFY_LIST, BOT_SENTRY_NOTIFIER } from '../../config/config';
 import moment = require('moment');
-import { Message, DdrObject, BotDingDongInfo, TemplateObject } from '../schemas/messageBO';
+import { Message, DdrObject, BotDingDongInfo } from '../schemas/messageBO';
 
 /**
  * CommandService Service
@@ -32,6 +32,7 @@ export default class CommandService extends Service {
     const obj = await ctx.service.redisService.getValue(message.FromUserName);
     if (obj) {
       obj.warnNum = 0;
+      obj.loginTime = Math.floor(Date.now() / 1000);
       obj.responseTime = Math.floor(Date.now() / 1000);
       await ctx.service.redisService.setValue(message.FromUserName, obj);
     } else {
@@ -41,6 +42,7 @@ export default class CommandService extends Service {
         token,
         tokenType,
         startTime: parseInt(message.CreateTime, 10),
+        loginTime: parseInt(message.CreateTime, 10),
         warnNum: 0,
         dingNum: 0,
         dongNum: 0,
@@ -177,7 +179,7 @@ export default class CommandService extends Service {
     }
     const object = await ctx.service.redisService.getValue(key);
     const ddr = ctx.helper.getDDR(object);
-    const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${ctx.helper.getRealDingNum(object)} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
+    const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${ctx.helper.getRealDingNum(object)} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nLoginTime: ${moment(object.loginTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
     return info;
   }
 
@@ -262,17 +264,6 @@ export default class CommandService extends Service {
     return 'Done!';
   }
 
-  public async test(message: Message) {
-    const user = message.FromUserName;
-    const object: TemplateObject = {
-      wxid: 'Soul001001',
-      time: Date.now(),
-      remark: '\nThis is test remark info\n\nseconds line\n\nlast line',
-    };
-    await this.ctx.service.messageService.sendTemplateMessage(object, user);
-    return 'done';
-  }
-
   public async getWxidListByToken(token: string) {
     const { ctx } = this;
 
@@ -285,12 +276,7 @@ export default class CommandService extends Service {
   public warnMessage(cacheObject: BotDingDongInfo): string {
     const { ctx } = this;
 
-    const duringTime = cacheObject.responseTime === cacheObject.startTime ? '0s' : ctx.helper.secondsToDhms(cacheObject.responseTime - cacheObject.startTime);
-    return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】
-LoginTime: ${moment(cacheObject.startTime * 1000).format('MM-DD HH:mm:ss')}
-LogoutTime: ${moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss')}
-DuringTime: ${duringTime}
-BotId: ${cacheObject.botId}`;
+    return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】\nBotId: ${cacheObject.botId}\n${ctx.helper.getBaseInfo(cacheObject)}`;
   }
 
 }

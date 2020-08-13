@@ -1,5 +1,4 @@
 export enum COMMAND {
-  TEST = 'MY_TEST',
   UNKNOWN_COMMAND = 'UNKNOWN_COMMAND',
   NO_PERMITION = 'NO_PERMITION',
   DING_START = '#ding-start',
@@ -18,7 +17,6 @@ export enum COMMAND {
 }
 
 export const COMMAND_LIST = [
-  COMMAND.TEST,
   COMMAND.DING_START,
   COMMAND.DONG,
   COMMAND.DDR,
@@ -35,7 +33,6 @@ export const COMMAND_LIST = [
 ];
 
 export const PRIVATE_LIST = [
-  COMMAND.TEST,
   COMMAND.CLEAR,
   COMMAND.RESET,
   COMMAND.DEL,
