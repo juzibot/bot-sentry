@@ -1,17 +1,20 @@
 export enum COMMAND {
   UNKNOWN_COMMAND = 'UNKNOWN_COMMAND',
   NO_PERMITION = 'NO_PERMITION',
+
   DING_START = '#ding-start',
   DONG = '#dong',
+
   DDR = '#ddr',
   DEAD = '#dead',
   INFO = '#info',
+
   CLEAR = '#clear',
   RESET = '#reset',
   DEL = '#del',
   ZW = '#ZW',
-  TYPE = '#type',
   TOKEN = '#token',
+  TYPE = '#type',
   SUBSCRIBE = '#I WANT TO RECEIVE WARNING NOTIFIER!',
   UNSUBSCRIBE = '#I DO NOT WANT TO RECEIVE WARNING NOTIFIER ANY MORE!',
 }
@@ -26,8 +29,8 @@ export const COMMAND_LIST = [
   COMMAND.RESET,
   COMMAND.DEL,
   COMMAND.ZW,
-  COMMAND.TYPE,
   COMMAND.TOKEN,
+  COMMAND.TYPE,
   COMMAND.SUBSCRIBE,
   COMMAND.UNSUBSCRIBE,
 ];

@@ -180,7 +180,8 @@ export default class CommandService extends Service {
     const object = await ctx.service.redisService.getValue(key);
     const ddr = ctx.helper.getDDR(object);
     const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${ctx.helper.getRealDingNum(object)} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nLoginTime: ${moment(object.loginTime * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
-    return info;
+    const token = object.token;
+    return [ info, token ];
   }
 
   public async clearWarnNumByBotId(botId: string) {

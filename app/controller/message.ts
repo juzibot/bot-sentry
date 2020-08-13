@@ -50,7 +50,7 @@ export default class MessageController extends Controller {
     if (!matchedCommandList || !matchedCommandList.length) {
       return {
         status: false,
-        command: this.responseMessage(message, 'Something wrong with your command, please check it again.'),
+        command: this.responseMessage(message, 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot'),
       };
     }
 
@@ -89,7 +89,12 @@ export default class MessageController extends Controller {
         responseData = await ctx.service.commandService.deadList();
         break;
       case COMMAND.INFO:
-        responseData = await ctx.service.commandService.getBotInfo(key);
+        const [ botInfo, token ] = await ctx.service.commandService.getBotInfo(key);
+        if (message.FromUserName === NOTIFY_LIST[0]) {
+          responseData = `${botInfo}\nToken: ${token}`;
+        } else {
+          responseData = botInfo;
+        }
         break;
       case COMMAND.CLEAR:
         await ctx.service.commandService.clearWarnNumByBotId(key);
