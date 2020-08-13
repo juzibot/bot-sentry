@@ -100,6 +100,7 @@ export default class CommandService extends Service {
       throw new Error(`can not get memory for ${message.FromUserName}`);
     }
     cacheObject.dongNum += 1;
+    cacheObject.warnNum = 0;
     cacheObject.responseTime = parseInt(message.CreateTime, 10);
     await ctx.service.redisService.setValue(message.FromUserName, cacheObject);
   }
