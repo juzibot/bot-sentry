@@ -27,3 +27,9 @@ export interface DdrObject {
 export interface XMLObject {
   xml: Message;
 }
+
+export interface TemplateObject {
+  wxid: string;
+  time: number;
+  remark: string;
+}

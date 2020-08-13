@@ -1,7 +1,7 @@
 import { Service } from 'egg';
 import { WARN_OPTIONS, NOTIFY_LIST, BOT_SENTRY_NOTIFIER } from '../../config/config';
 import moment = require('moment');
-import { Message, DdrObject, BotDingDongInfo } from '../schemas/messageBO';
+import { Message, DdrObject, BotDingDongInfo, TemplateObject } from '../schemas/messageBO';
 
 /**
  * CommandService Service
@@ -260,6 +260,17 @@ export default class CommandService extends Service {
     userList.splice(index, 1);
     await ctx.service.redisService.setValue(BOT_SENTRY_NOTIFIER, userList);
     return 'Done!';
+  }
+
+  public async test(message: Message) {
+    const user = message.FromUserName;
+    const object: TemplateObject = {
+      wxid: 'Soul001001',
+      time: Date.now(),
+      remark: '\nThis is test remark info\n\nseconds line\n\nlast line',
+    };
+    await this.ctx.service.messageService.sendTemplateMessage(object, user);
+    return 'done';
   }
 
   public async getWxidListByToken(token: string) {

@@ -38,7 +38,7 @@ export default class MessageController extends Controller {
 
     const data = this.checkCommand(message);
     if (!data.status) {
-      return data.command
+      return data.command;
     }
 
     return this.processCommand(message, data.command as COMMAND);
@@ -119,6 +119,9 @@ export default class MessageController extends Controller {
       case COMMAND.UNSUBSCRIBE:
         responseData = await ctx.service.commandService.unSubscribeWarningMessage(message);
         break;
+      case COMMAND.TEST:
+        responseData = await ctx.service.commandService.test(message);
+        break;
       default:
         responseData = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot';
         break;
@@ -128,7 +131,7 @@ export default class MessageController extends Controller {
 
   private matchCommand(message: Message, command: COMMAND) {
     const content = message.Content;
-    const reg =new RegExp(`${command}$`,"gim");
+    const reg = new RegExp(`${command}$`, 'gim');
 
     const isMatch = reg.test(content);
     if (!isMatch) {
@@ -142,7 +145,7 @@ export default class MessageController extends Controller {
       return {
         code: true,
         command: COMMAND.NO_PERMITION,
-      }
+      };
     }
 
     return {

@@ -4,6 +4,7 @@ import axios from 'axios';
 import NodeCache = require('node-cache');
 import RequestClient from '../util/requestClient';
 import { BASE_URL, APPID, APPSECRET, NOTIFY_LIST } from '../../config/config';
+import { TemplateObject } from '../schemas/messageBO';
 
 const myCache = new NodeCache({
   stdTTL: 1.8 * 60 * 60,
@@ -12,16 +13,18 @@ const myCache = new NodeCache({
 
 const client = new RequestClient();
 
+const TEMPLATE_MESSAGE_ID = 'vXoSPoWAOZ11s_ZpsEaWVIVfziq06-EwO8j8-13ITGY';
+
 /**
  * MessageService Service
  */
 export default class MessageService extends Service {
 
-  public async sendMessage(text: string, toUser: string = NOTIFY_LIST[0]) {
+  public async sendMessage(text: string, touser: string = NOTIFY_LIST[0]) {
 
     const token = await this.getToken();
     const data = {
-      touser: toUser,
+      touser,
       msgtype: 'text',
       text: {
         content: text,
@@ -31,6 +34,39 @@ export default class MessageService extends Service {
       data,
       type: 'POST',
       url: `/cgi-bin/message/custom/send?access_token=${token}`,
+    };
+
+    await client.request(requestData);
+  }
+
+  public async sendTemplateMessage(object: TemplateObject, touser: string) {
+
+    const token = await this.getToken();
+    const { wxid, time, remark } = object;
+
+    const data = {
+      touser,
+      template_id: TEMPLATE_MESSAGE_ID,
+      topcolor: '#FF0000',
+      data: {
+        first: {
+          value: `微信：${wxid} 掉线报警`,
+        },
+        performance: {
+          value: '微信号5分钟内未响应系统监控消息，可能发生故障或退出登录。',
+        },
+        time: {
+          value: time,
+        },
+        remark: {
+          value: remark,
+        },
+      },
+    };
+    const requestData = {
+      data,
+      type: 'POST',
+      url: `/cgi-bin/message/template/send?access_token=${token}`,
     };
 
     await client.request(requestData);
