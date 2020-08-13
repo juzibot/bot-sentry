@@ -30,6 +30,7 @@ export interface XMLObject {
 }
 
 export interface TemplateObject {
+  name: string;
   wxid: string;
   time: string;
   remark: string;

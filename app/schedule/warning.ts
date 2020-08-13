@@ -65,12 +65,15 @@ class Warning extends Subscription {
               await ctx.service.messageService.sendMessage(warnMessage, id);
             } else {
               const object: TemplateObject = {
+                name: cacheObject.botName,
                 wxid: cacheObject.botId,
                 time: moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss'),
                 remark: ctx.helper.getBaseInfo(cacheObject),
               };
               await this.ctx.service.messageService.sendTemplateMessage(object, id);
             }
+            cacheObject.warnNum += 1;
+            await app.redis.set(key, JSON.stringify(cacheObject));
           });
           return;
         } else if (cacheObject.responseTime && flag > WARN_OPTIONS.TIMEOUT) {
