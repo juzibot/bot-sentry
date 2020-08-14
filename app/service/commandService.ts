@@ -1,5 +1,5 @@
 import { Service } from 'egg';
-import { WARN_OPTIONS, NOTIFY_LIST, BOT_SENTRY_NOTIFIER } from '../../config/config';
+import { WARN_OPTIONS, BOT_SENTRY_NOTIFIER, NOTIFIER } from '../../config/config';
 import moment = require('moment');
 import { Message, DdrObject, BotDingDongInfo } from '../schemas/messageBO';
 
@@ -215,7 +215,7 @@ export default class CommandService extends Service {
   public async delObjectByBotId(message: Message, botId: string): Promise<string> {
     const { ctx } = this;
 
-    if (message.FromUserName !== NOTIFY_LIST[0]) {
+    if (message.FromUserName !== NOTIFIER.SU_CHANG) {
       return 'you have no permition';
     }
     const key = await ctx.service.redisService.getValue(botId);
@@ -274,10 +274,8 @@ export default class CommandService extends Service {
     return strList.join('').toString();
   }
 
-  public warnMessage(cacheObject: BotDingDongInfo): string {
-    const { ctx } = this;
-
-    return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】\nBotId: ${cacheObject.botId}\n${ctx.helper.getBaseInfo(cacheObject)}`;
+  public warnMessage(cacheObject: BotDingDongInfo, baseInfo: string): string {
+    return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】\nBotId: ${cacheObject.botId}\n${baseInfo}`;
   }
 
 }

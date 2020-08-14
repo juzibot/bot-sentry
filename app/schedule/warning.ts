@@ -1,6 +1,6 @@
 import { Subscription } from 'egg';
 import MessageController from '../controller/message';
-import { NOTIFY_LIST, WARN_OPTIONS, BOT_SENTRY_NOTIFIER } from '../../config/config';
+import { NOTIFY_LIST, WARN_OPTIONS, BOT_SENTRY_NOTIFIER, NOTIFIER } from '../../config/config';
 import { TemplateObject } from '../schemas/messageBO';
 import moment = require('moment');
 
@@ -59,16 +59,18 @@ class Warning extends Subscription {
         // warning
         const flag = Math.round(Date.now() / 1000) - cacheObject.responseTime;
         if (cacheObject.warnNum && cacheObject.warnNum === WARN_OPTIONS.WARNING_TIMES && flag > WARN_OPTIONS.TIMEOUT) {
-          const warnMessage = ctx.service.commandService.warnMessage(cacheObject);
+          const baseInfo = ctx.helper.getBaseInfo(cacheObject);
+          const warnMessage = ctx.service.commandService.warnMessage(cacheObject, baseInfo);
+
           notifierList.map(async (id: string) => {
-            if (id === 'owRfxwtsRGulmOxiyDrHVupd2gic') { // for JuziBot forward this message to ALARM-ROOM
+            if (id === NOTIFIER.JUZI_BOT) { // for JuziBot forward this message to ALARM-ROOM
               await ctx.service.messageService.sendMessage(warnMessage, id);
             } else {
               const object: TemplateObject = {
                 name: cacheObject.botName,
                 wxid: cacheObject.botId,
                 time: moment(cacheObject.responseTime * 1000).format('MM-DD HH:mm:ss'),
-                remark: ctx.helper.getBaseInfo(cacheObject),
+                remark: baseInfo,
               };
               await this.ctx.service.messageService.sendTemplateMessage(object, id);
             }

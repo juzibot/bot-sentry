@@ -3,7 +3,7 @@ import { Service } from 'egg';
 import axios from 'axios';
 import NodeCache = require('node-cache');
 import RequestClient from '../util/requestClient';
-import { BASE_URL, APPID, APPSECRET, NOTIFY_LIST } from '../../config/config';
+import { BASE_URL, APPID, APPSECRET, NOTIFIER } from '../../config/config';
 import { TemplateObject } from '../schemas/messageBO';
 
 const myCache = new NodeCache({
@@ -20,7 +20,7 @@ const TEMPLATE_MESSAGE_ID = 'vXoSPoWAOZ11s_ZpsEaWVIVfziq06-EwO8j8-13ITGY';
  */
 export default class MessageService extends Service {
 
-  public async sendMessage(text: string, touser: string = NOTIFY_LIST[0]) {
+  public async sendMessage(text: string, touser: string = NOTIFIER.SU_CHANG) {
 
     const token = await this.getToken();
     const data = {

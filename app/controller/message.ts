@@ -1,7 +1,7 @@
 import { Controller } from 'egg';
 import crypto = require('crypto');
 
-import { WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE, ERROR_COMMAND } from '../../config/config';
+import { WARN_OPTIONS, INIT_MESSAGE, ERROR_COMMAND, NOTIFIER } from '../../config/config';
 import { PRIVATE_LIST, COMMAND_LIST, COMMAND } from '../schemas/commandBO';
 import { Message } from '../schemas/messageBO';
 
@@ -90,7 +90,7 @@ export default class MessageController extends Controller {
         break;
       case COMMAND.INFO:
         const [ botInfo, token ] = await ctx.service.commandService.getBotInfo(key);
-        if (message.FromUserName === NOTIFY_LIST[0]) {
+        if (message.FromUserName === NOTIFIER.SU_CHANG) {
           responseData = `${botInfo}\nToken: ${token}`;
         } else {
           responseData = botInfo;
@@ -143,7 +143,7 @@ export default class MessageController extends Controller {
       };
     }
 
-    if (PRIVATE_LIST.includes(command) && message.FromUserName !== NOTIFY_LIST[0]) {
+    if (PRIVATE_LIST.includes(command) && message.FromUserName !== NOTIFIER.SU_CHANG) {
       return {
         code: true,
         command: COMMAND.NO_PERMITION,

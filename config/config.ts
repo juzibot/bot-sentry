@@ -13,11 +13,17 @@ export enum WARN_OPTIONS {
   TIMEOUT = 100,
 }
 
-export const NOTIFY_LIST = [
-  'owRfxwoWHK_iwYZxuFmXFjF0vbqo', // su
-  'owRfxwrr-SCyLFGmCXBX8A_TzzoU', // gao
+export enum NOTIFIER {
+  SU_CHANG = 'owRfxwoWHK_iwYZxuFmXFjF0vbqo', // su
+  GAO_YUAN = 'owRfxwrr-SCyLFGmCXBX8A_TzzoU', // gao
+  JUZI_BOT = 'owRfxwtsRGulmOxiyDrHVupd2gic', // Juzi.Bot
   // 'owRfxwjXYizqQxxEN_Y0YitRPUH0', // yin
-  'owRfxwtsRGulmOxiyDrHVupd2gic', // Juzi.Bot
+}
+
+export const NOTIFY_LIST = [
+  NOTIFIER.SU_CHANG,
+  NOTIFIER.GAO_YUAN,
+  NOTIFIER.JUZI_BOT,
 ];
 
 export const BOT_SENTRY_NOTIFIER = 'bot_sentry_notifier';
