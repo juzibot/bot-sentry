@@ -41,7 +41,7 @@ module.exports = {
   getBaseInfo(object: BotDingDongInfo) {
     const time = object.loginTime || object.startTime;
     const duringTime = object.responseTime === time ? '0s' : this.secondsToDhms(object.responseTime - time);
-    const info = `登录时间: ${moment(time * 1000).format('MM-DD HH:mm:ss')}\n登出事件: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\n在线时长: ${duringTime}`;
+    const info = `登录时间: ${moment(time * 1000).format('MM-DD HH:mm:ss')}\n在线时长: ${duringTime}\n最近响应时间: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
     return info;
   },
 
