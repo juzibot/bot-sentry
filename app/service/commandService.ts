@@ -123,10 +123,10 @@ export default class CommandService extends Service {
         const ddr = ctx.helper.getDDR(cacheObject);
         totalDing += ctx.helper.getRealDingNum(cacheObject);
         totalDong += cacheObject.dongNum;
-        const deadFlag = cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? '【offline】' : '';
+        const deadFlag = cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES;
         cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? deadNum++ : onlineNum++;
         const object = {
-          content: `【${cacheObject.botName || cacheObject.botId}】${deadFlag}\nbotId: ${cacheObject.botId}\nDing/Dong: ${ctx.helper.getRealDingNum(cacheObject)}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
+          content: `${this.getPreText(cacheObject, deadFlag)}\nDing/Dong: ${ctx.helper.getRealDingNum(cacheObject)}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
           ddr,
         };
         ddrObjectList.push(object);
@@ -160,8 +160,8 @@ export default class CommandService extends Service {
     for (const key of keys) {
       const object = await ctx.service.redisService.getValue(key);
       if (object && object.botId && object.warnNum >= WARN_OPTIONS.WARNING_TIMES) {
-        const ddr = ctx.helper.getDDR(object);
-        deadList.push(`【${object.botName || object.botId}】\nBotId: ${object.botId}\nDeadTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\nDDR: ${ddr}%\n\n`);
+        const baseInfo = ctx.helper.getBaseInfo(object);
+        deadList.push(`${this.getPreText(object)}${baseInfo}\n\n`);
       }
     }
     if (deadList.length) {
@@ -178,10 +178,14 @@ export default class CommandService extends Service {
       return `Wrong botId[${botId}], please check it again!`;
     }
     const object = await ctx.service.redisService.getValue(key);
-    const ddr = ctx.helper.getDDR(object);
-    const info = `【${object.botName}】\nBotId: ${object.botId} \nDDR: ${ddr}% \nDingNum: ${ctx.helper.getRealDingNum(object)} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum} \nStartTime: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')} \nLoginTime: ${moment((object.loginTime || object.startTime) * 1000).format('MM-DD HH:mm:ss')} \nResTime: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}`;
+    const baseInfo = ctx.helper.getBaseInfo(object);
+    const info = `${this.getPreText(object)}DingNum: ${ctx.helper.getRealDingNum(object)} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum}\n${baseInfo}`;
     const token = object.token;
     return [ info, token ];
+  }
+
+  private getPreText(object: BotDingDongInfo, isDead: boolean = false) {
+    return `【${object.botName || object.botId}】${isDead ? '【offline】' : ''}\nBotId: ${object.botId}\n`
   }
 
   public async clearWarnNumByBotId(botId: string) {
