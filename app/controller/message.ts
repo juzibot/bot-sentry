@@ -1,7 +1,7 @@
 import { Controller } from 'egg';
 import crypto = require('crypto');
 
-import { WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE } from '../../config/config';
+import { WARN_OPTIONS, NOTIFY_LIST, INIT_MESSAGE, ERROR_COMMAND } from '../../config/config';
 import { PRIVATE_LIST, COMMAND_LIST, COMMAND } from '../schemas/commandBO';
 import { Message } from '../schemas/messageBO';
 
@@ -50,7 +50,7 @@ export default class MessageController extends Controller {
     if (!matchedCommandList || !matchedCommandList.length) {
       return {
         status: false,
-        command: this.responseMessage(message, 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot'),
+        command: this.responseMessage(message, ERROR_COMMAND),
       };
     }
 
@@ -125,7 +125,7 @@ export default class MessageController extends Controller {
         responseData = await ctx.service.commandService.unSubscribeWarningMessage(message);
         break;
       default:
-        responseData = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot';
+        responseData = ERROR_COMMAND;
         break;
     }
     return this.responseMessage(message, responseData);

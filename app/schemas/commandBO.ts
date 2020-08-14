@@ -8,6 +8,8 @@ export enum COMMAND {
   DDR = '#ddr',
   DEAD = '#dead',
   INFO = '#info',
+  SUBSCRIBE = '#SAN',
+  UNSUBSCRIBE = '#USAN',
 
   CLEAR = '#clear',
   RESET = '#reset',
@@ -15,8 +17,6 @@ export enum COMMAND {
   ZW = '#ZW',
   TOKEN = '#token',
   TYPE = '#type',
-  SUBSCRIBE = '#I WANT TO RECEIVE WARNING NOTIFIER!',
-  UNSUBSCRIBE = '#I DO NOT WANT TO RECEIVE WARNING NOTIFIER ANY MORE!',
 }
 
 export const COMMAND_LIST = [
@@ -25,14 +25,14 @@ export const COMMAND_LIST = [
   COMMAND.DDR,
   COMMAND.DEAD,
   COMMAND.INFO,
+  COMMAND.SUBSCRIBE,
+  COMMAND.UNSUBSCRIBE,
   COMMAND.CLEAR,
   COMMAND.RESET,
   COMMAND.DEL,
   COMMAND.ZW,
   COMMAND.TOKEN,
   COMMAND.TYPE,
-  COMMAND.SUBSCRIBE,
-  COMMAND.UNSUBSCRIBE,
 ];
 
 export const PRIVATE_LIST = [
