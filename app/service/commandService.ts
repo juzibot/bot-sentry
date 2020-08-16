@@ -126,7 +126,7 @@ export default class CommandService extends Service {
         const deadFlag = cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES;
         cacheObject.warnNum >= WARN_OPTIONS.WARNING_TIMES ? deadNum++ : onlineNum++;
         const object = {
-          content: `${this.getPreText(cacheObject, deadFlag)}\nDing/Dong: ${ctx.helper.getRealDingNum(cacheObject)}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
+          content: `${this.getPreText(cacheObject, deadFlag)}Ding/Dong: ${ctx.helper.getRealDingNum(cacheObject)}/${cacheObject.dongNum}\nDDR: ${ddr}%\n\n`,
           ddr,
         };
         ddrObjectList.push(object);
