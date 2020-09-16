@@ -28,7 +28,7 @@ export default (appInfo: EggAppInfo) => {
   config.mongoose = {
     client: {
       url: 'mongodb://68.79.47.251/donut',
-      options: {},
+      options: { useUnifiedTopology: true },
     },
   };
 
