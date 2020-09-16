@@ -27,20 +27,24 @@ class Warning extends Subscription {
   async subscribe() {
     const { ctx } = this;
     const keys = await ctx.service.redisService.allKeys();
-    ctx.logger.info(`Ready to send #ding for each bot, bot length: ${keys.length}`);
 
     const notifierList = await ctx.service.messageService.getOrInitNotifierList();
-
-    keys.forEach(async (key: string) => {
+    let num = 0;
+    let activeNum = 0;
+    await Promise.all(keys.map(async (key: string) => {
       const cacheObject = await ctx.service.redisService.getValue(key);
 
       if (cacheObject && cacheObject.botId && MessageController.type.includes(cacheObject.tokenType)) {
+        num++;
         if (cacheObject.warnNum > WARN_OPTIONS.WARNING_TIMES) {
+          ctx.logger.info(`DEAD bot name: ${cacheObject.botName}, num: ${num}`);
           return;
         }
 
         // send #ding
         if (cacheObject.warnNum < WARN_OPTIONS.WARNING_TIMES) {
+          activeNum++;
+          ctx.logger.info(`ACTIVE bot name: ${cacheObject.botName}, num: ${num}`);
           await ctx.service.messageService.sendMessage('#ding', key);
           cacheObject.dingNum += 1;
         }
@@ -56,7 +60,12 @@ class Warning extends Subscription {
         }
         await ctx.service.redisService.setValue(key, cacheObject);
       }
-    });
+    }));
+    ctx.logger.info(`
+    ==================================================
+    all bot num: ${num}, active bot num: ${activeNum}
+    ==================================================
+    `)
   }
 
   private async sendWarnMessage(cacheObject: BotDingDongInfo, notifierList: string[]) {
