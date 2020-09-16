@@ -22,8 +22,8 @@ export enum NOTIFIER {
 
 export const NOTIFY_LIST = [
   NOTIFIER.SU_CHANG,
-  NOTIFIER.GAO_YUAN,
-  NOTIFIER.JUZI_BOT,
+  // NOTIFIER.GAO_YUAN,
+  // NOTIFIER.JUZI_BOT,
 ];
 
 export const BOT_SENTRY_NOTIFIER = 'bot_sentry_notifier';
