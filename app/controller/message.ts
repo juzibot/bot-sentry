@@ -86,7 +86,7 @@ export default class MessageController extends Controller {
         responseData = await ctx.service.commandService.ddrList(message);
         break;
       case COMMAND.DEAD:
-        responseData = await ctx.service.commandService.deadList();
+        responseData = await ctx.service.commandService.deadList(message);
         break;
       case COMMAND.INFO:
         const [ botInfo, token ] = await ctx.service.commandService.getBotInfo(key);

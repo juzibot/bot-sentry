@@ -119,6 +119,8 @@ export default class CommandService extends Service {
     let onlineNum = 0;
     let totalDing = 0;
     let totalDong = 0;
+
+    // generate bot object
     const ddrObjectList: DdrObject[] = [];
     for (const key of keys) {
       const cacheObject: BotDingDongInfo | undefined = await ctx.service.redisService.getValue(key);
@@ -135,11 +137,13 @@ export default class CommandService extends Service {
         ddrObjectList.push(object);
       }
     }
-    const _ddrObjectList = ddrObjectList.sort((a, b) => a.ddr - b.ddr).map(object => object.content);
+
+    // sort object list and pagenation
+    const sortedObjectList = ddrObjectList.sort((a, b) => a.ddr - b.ddr).map(object => object.content);
     let page = 0;
-    const totalPage = Math.ceil(_ddrObjectList.length / MAX);
-    while (_ddrObjectList.length !== 0) {
-      const partial = _ddrObjectList.splice(0, MAX);
+    const totalPage = Math.ceil(sortedObjectList.length / MAX);
+    while (sortedObjectList.length !== 0) {
+      const partial = sortedObjectList.splice(0, MAX);
       page++;
       const totalDDR = ctx.helper.calculateDDR(totalDing, totalDong);
       const line = '--------------------------\n';
@@ -151,9 +155,10 @@ export default class CommandService extends Service {
     return totalPage === 0 ? 'No alive bot.' : 'All bots info load finished!';
   }
 
-  public async deadList() {
+  public async deadList(message: Message) {
     const { ctx } = this;
 
+    const MAX = WARN_OPTIONS.MAX_OBJECT_OF_DDR_MSG;
     const deadList: string[] = [];
     const keys = await ctx.service.redisService.allKeys();
     const botNumber = keys.length;
@@ -167,10 +172,20 @@ export default class CommandService extends Service {
         deadList.push(`${this.getPreText(object)}${baseInfo}\n\n`);
       }
     }
-    if (deadList.length) {
-      return deadList.join('').toString();
+
+    // sort object list and pagenation
+    let page = 0;
+    const totalPage = Math.ceil(deadList.length / MAX);
+    while (deadList.length !== 0) {
+      const partial = deadList.splice(0, MAX);
+      page++;
+      const line = '--------------------------\n';
+      const pageStr = totalPage === 1 ? '' : `totalPage: ${totalPage}, curPage: ${page}\n`;
+      const titleAbstract = `【Dead List】\n${pageStr}${line}`;
+      const msg = titleAbstract + partial.join('');
+      await ctx.service.messageService.sendMessage(msg, message.FromUserName);
     }
-    return 'No dead bot!';
+    return totalPage === 0 ? 'No dead bot.' : 'All dead bots info load finished!';
   }
 
   public async getBotInfo(botId: string) {
