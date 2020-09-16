@@ -31,6 +31,9 @@ export default class CommandService extends Service {
 
     const obj = await ctx.service.redisService.getValue(message.FromUserName);
     if (obj) {
+      obj.botName = botName;
+      obj.token = token;
+      obj.tokenType = tokenType;
       obj.warnNum = 0;
       obj.loginTime = Math.floor(Date.now() / 1000);
       obj.responseTime = Math.floor(Date.now() / 1000);
