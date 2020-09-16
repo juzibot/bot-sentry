@@ -14,6 +14,7 @@ module.exports = (app: any) => {
       type: { type: Number, default: 0 },
       online: { type: Boolean, default: false },
       memo: { type: String, default: '' },
+      remark: { type: String, default: '' },
     }], default: [] },
     discount: { type: Number, required: true, unique: false }, // 折扣信息
     password: { type: String, required: false, unique: false }, // 密码
