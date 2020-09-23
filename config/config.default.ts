@@ -25,13 +25,6 @@ export default (appInfo: EggAppInfo) => {
     },
   };
 
-  config.mongoose = {
-    client: {
-      url: 'mongodb://68.79.47.251/donut',
-      options: { useUnifiedTopology: true },
-    },
-  };
-
   const bodyParserConfig: any = {
     enable: true,
     encoding: 'utf8',

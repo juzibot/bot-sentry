@@ -6,6 +6,8 @@ export const INIT_MESSAGE = 'Hi, bot maintainer! \n\nThe message from bot is sen
 
 export const ERROR_COMMAND = 'Error command!\n\nCommand List:\n#ddr: show all bot ding-dong rate\n#dead: show all dead bot\nbotId#info: see the detail info of this bot\n#SAN: subscribe alarm notification\n#USAN: unsubscribe alarm notification';
 
+export const SECRET_TOKEN = process.env.SECRET_TOKEN || '8a3fd8c8459588a9';
+
 export enum WARN_OPTIONS {
   MY_TOKEN = '5f6f30b388ca0401',
   WARNING_TIMES = 3,

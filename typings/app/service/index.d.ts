@@ -9,6 +9,7 @@ type AutoInstanceType<T, U = T extends CanExportFunc ? T : T extends AnyFunc ? R
 import ExportTest from '../../../app/service/Test';
 import ExportCommandService from '../../../app/service/commandService';
 import ExportMessageService from '../../../app/service/messageService';
+import ExportMonitorService from '../../../app/service/monitorService';
 import ExportRedisService from '../../../app/service/redisService';
 
 declare module 'egg' {
@@ -16,6 +17,7 @@ declare module 'egg' {
     test: AutoInstanceType<typeof ExportTest>;
     commandService: AutoInstanceType<typeof ExportCommandService>;
     messageService: AutoInstanceType<typeof ExportMessageService>;
+    monitorService: AutoInstanceType<typeof ExportMonitorService>;
     redisService: AutoInstanceType<typeof ExportRedisService>;
   }
 }

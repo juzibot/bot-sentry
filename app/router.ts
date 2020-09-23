@@ -5,4 +5,10 @@ export default (app: Application) => {
 
   router.get('/', controller.message.check);
   router.post('/', controller.message.receiveMessage);
+
+  /**
+   * Privatization deployment monitor
+   */
+
+   router.post('/deploy/summary', controller.monitor.collector)
 };
