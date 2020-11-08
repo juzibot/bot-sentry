@@ -29,3 +29,5 @@ export const NOTIFY_LIST = [
 ];
 
 export const BOT_SENTRY_NOTIFIER = 'bot_sentry_notifier';
+
+export const QINGDUN_TOKEN_LIST: string[] = []

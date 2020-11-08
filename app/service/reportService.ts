@@ -1,15 +1,13 @@
 import { Service } from 'egg';
 import axios from 'axios';
 
-const DONUT_ALERT_URL = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=67fe4966-77ca-4a5e-a3aa-02e30d63d536';
-
 export default class ReportService extends Service {
 
   public async sendNotification(
     content: string,
+    url: string,
     mention?: boolean,
   ) {
-    const url = DONUT_ALERT_URL;
     if (!url) {
       this.logger.info('no xiaoju monitor alert url, skip sending monitor alert.');
       return;
