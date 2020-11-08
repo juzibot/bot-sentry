@@ -102,7 +102,7 @@ export default class CommandService extends Service {
 
     const cacheObject = await ctx.service.redisService.getValue(message.FromUserName);
     if (!cacheObject) {
-      throw new Error(`can not get memory for ${message.FromUserName}`);
+      throw new Error(`can not get cache info for ${message.FromUserName}`);
     }
     cacheObject.dongNum += 1;
     cacheObject.warnNum = 0;
@@ -188,17 +188,30 @@ export default class CommandService extends Service {
     return totalPage === 0 ? 'No dead bot.' : 'All dead bots info load finished!';
   }
 
+  private async getUserIdAndBotInfoByBotId(botId: string) {
+    const { ctx } = this;
+    let errMsg = '';
+    const userId = await ctx.service.redisService.getValue(botId);
+    if (!userId) {
+      errMsg = `Wrong botId[${botId}], please check it again!`;
+    }
+    const botInfo = await ctx.service.redisService.getValue(userId);
+    if (!botInfo) {
+      errMsg = `Wrong userId[${userId}], botId[${botId}], please check it again!`;
+    }
+    return { userId, botInfo, errMsg };
+  }
+
   public async getBotInfo(botId: string) {
     const { ctx } = this;
 
-    const key = await ctx.service.redisService.getValue(botId);
-    if (!key) {
-      return [ `Wrong botId[${botId}], please check it again!` ];
+    const { botInfo, errMsg } = await this.getUserIdAndBotInfoByBotId(botId);
+    if (errMsg) {
+      return [ errMsg ];
     }
-    const object = await ctx.service.redisService.getValue(key);
-    const baseInfo = ctx.helper.getBaseInfo(object);
-    const info = `${this.getPreText(object)}DingNum: ${ctx.helper.getRealDingNum(object)} \nDongNum: ${object.dongNum}\nWarnNum: ${object.warnNum}\n${baseInfo}`;
-    const token = object.token;
+    const baseInfo = ctx.helper.getBaseInfo(botInfo);
+    const info = `${this.getPreText(botInfo)}DingNum: ${ctx.helper.getRealDingNum(botInfo)} \nDongNum: ${botInfo.dongNum}\nWarnNum: ${botInfo.warnNum}\n${baseInfo}`;
+    const token = botInfo.token;
     return [ info, token ];
   }
 
@@ -209,29 +222,27 @@ export default class CommandService extends Service {
   public async clearWarnNumByBotId(botId: string) {
     const { ctx } = this;
 
-    const key = await ctx.service.redisService.getValue(botId);
-    if (!key) {
-      return `Wrong botId[${botId}], please check it again!`;
+    const { userId, botInfo, errMsg } = await this.getUserIdAndBotInfoByBotId(botId);
+    if (errMsg) {
+      return errMsg;
     }
-    const cacheObject = await ctx.service.redisService.getValue(key);
-    cacheObject.warnNum = 0;
-    cacheObject.responseTime = Math.floor(Date.now() / 1000);
-    await ctx.service.redisService.setValue(key, cacheObject);
+    botInfo.warnNum = 0;
+    botInfo.responseTime = Math.floor(Date.now() / 1000);
+    await ctx.service.redisService.setValue(userId, botInfo);
   }
 
   public async resetDingDongByBotId(botId: string) {
     const { ctx } = this;
 
-    const key = await ctx.service.redisService.getValue(botId);
-    if (!key) {
-      return `Wrong botId[${botId}], please check it again!`;
+    const { userId, botInfo, errMsg } = await this.getUserIdAndBotInfoByBotId(botId);
+    if (errMsg) {
+      return errMsg;
     }
-    const cacheObject = await ctx.service.redisService.getValue(key);
-    cacheObject.dingNum = 0;
-    cacheObject.dongNum = 0;
-    cacheObject.warnNum = 0;
-    cacheObject.responseTime = Math.floor(Date.now() / 1000);
-    await ctx.service.redisService.setValue(key, cacheObject);
+    botInfo.dingNum = 0;
+    botInfo.dongNum = 0;
+    botInfo.warnNum = 0;
+    botInfo.responseTime = Math.floor(Date.now() / 1000);
+    await ctx.service.redisService.setValue(userId, botInfo);
   }
 
   public async delObjectByBotId(message: Message, botId: string): Promise<string> {
@@ -240,12 +251,12 @@ export default class CommandService extends Service {
     if (message.FromUserName !== NOTIFIER.SU_CHANG) {
       return 'you have no permition';
     }
-    const key = await ctx.service.redisService.getValue(botId);
-    if (!key) {
-      return `Wrong botId[${botId}], please check it again!`;
+    const { userId, errMsg } = await this.getUserIdAndBotInfoByBotId(botId);
+    if (errMsg) {
+      return errMsg;
     }
     await ctx.service.redisService.deleteKey(botId);
-    await ctx.service.redisService.deleteKey(key);
+    await ctx.service.redisService.deleteKey(userId);
     return 'already deleted!';
   }
 
@@ -292,7 +303,7 @@ export default class CommandService extends Service {
 
     const list = await ctx.service.redisService.getValue(token);
     if (!list || list.length === 0) {
-      return `can not find wxid list by this token: ${token}, please check it again.`
+      return `can not find wxid list by this token: ${token}, please check it again.`;
     }
 
     const strList = list.map(object => `【${object.wxid}】\nBotName: ${object.botName}\nloginTime: ${moment((object.startTime || object.loginTime) * 1000).format('MM-DD HH:mm:ss')}\n\n`);
@@ -300,11 +311,11 @@ export default class CommandService extends Service {
   }
 
   public warnMessage(cacheObject: BotDingDongInfo, baseInfo: string): string {
-    return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】\nBotId: ${cacheObject.botId}\n${baseInfo}`;
+    return `【掉线报警(${cacheObject.botName || cacheObject.botId})】\nBotId: ${cacheObject.botId}\n${baseInfo}`;
   }
 
   public warnMessageMarkdown(cacheObject: BotDingDongInfo, baseInfo: string): string {
-    return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】\n> BotId: ${cacheObject.botId}\n${baseInfo}`;
+    return `【掉线报警(${cacheObject.botName || cacheObject.botId})】\n> BotId: ${cacheObject.botId}\n${baseInfo}`;
   }
 
 }
