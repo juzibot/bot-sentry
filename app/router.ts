@@ -10,5 +10,5 @@ export default (app: Application) => {
    * Privatization deployment monitor
    */
 
-   router.post('/deploy/summary', controller.monitor.collector)
+  router.post('/deploy/summary', controller.monitor.collector);
 };

@@ -202,8 +202,8 @@ export default class CommandService extends Service {
     return [ info, token ];
   }
 
-  private getPreText(object: BotDingDongInfo, isDead: boolean = false) {
-    return `【${object.botName || object.botId}】${isDead ? '【offline】' : ''}\nBotId: ${object.botId}\n`
+  private getPreText(object: BotDingDongInfo, isDead = false) {
+    return `【${object.botName || object.botId}】${isDead ? '【offline】' : ''}\nBotId: ${object.botId}\n`;
   }
 
   public async clearWarnNumByBotId(botId: string) {

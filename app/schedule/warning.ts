@@ -52,7 +52,7 @@ class Warning extends Subscription {
         // warning
         if (cacheObject.warnNum === WARN_OPTIONS.WARNING_TIMES) {
           await this.sendWarnMessage(cacheObject, notifierList);
-          await this.reportWarnMessage(cacheObject)
+          await this.reportWarnMessage(cacheObject);
         }
 
         const diffTime = cacheObject.responseTime && Math.round(Date.now() / 1000) - cacheObject.responseTime;
@@ -66,7 +66,7 @@ class Warning extends Subscription {
     ==================================================
     all bot num: ${num}, active bot num: ${activeNum}
     ==================================================
-    `)
+    `);
   }
 
   private async sendWarnMessage(cacheObject: BotDingDongInfo, notifierList: string[]) {

@@ -6,7 +6,7 @@ import { MonitorInfo } from '../schemas/monitorBO';
  */
 export default class MonitorService extends Service {
 
-  public async collectMonitorInfo (data: MonitorInfo) {
+  public async collectMonitorInfo(data: MonitorInfo) {
     const { ctx, logger } = this;
     logger.info('collectMonitorInfo()');
     const {
@@ -26,7 +26,7 @@ export default class MonitorService extends Service {
       missTokenNum,
       deadTokenNum,
       detailInfo,
-    }
-    await ctx.model.Monitor.create(monitorDBObject)
+    };
+    await ctx.model.Monitor.create(monitorDBObject);
   }
 }

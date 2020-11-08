@@ -35,10 +35,10 @@ class CheckDeadBot extends Subscription {
         const diffTime = Math.floor(Date.now() / 1000) - cacheObject.responseTime;
         if (cacheObject.warnNum > WARN_OPTIONS.WARNING_TIMES) {
           if (diffTime < 2 * 24 * 3600) {
-            num++
+            num++;
             await ctx.service.messageService.sendMessage('#ding', key);
           } else {
-            deadTokenList.push(cacheObject.token)
+            deadTokenList.push(cacheObject.token);
           }
         }
       }
@@ -49,7 +49,7 @@ class CheckDeadBot extends Subscription {
     dead token list length: ${deadTokenList.length}
     list detail: ${deadTokenList}
     ==================================================
-    `)
+    `);
   }
 
 }

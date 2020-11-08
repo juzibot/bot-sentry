@@ -13,7 +13,7 @@ module.exports = (app: any) => {
       type: {
         userTokenList: String,
         tokenDockerMap: String,
-      }
+      },
     },
   }, {
     toJson: { virtuals: true },
