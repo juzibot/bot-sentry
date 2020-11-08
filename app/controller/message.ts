@@ -91,7 +91,7 @@ export default class MessageController extends Controller {
       case COMMAND.INFO:
         const [ botInfo, token ] = await ctx.service.commandService.getBotInfo(key);
         if (message.FromUserName === NOTIFIER.SU_CHANG) {
-          responseData = `${botInfo}\nToken: ${token}`;
+          responseData = `${botInfo}\n${token ? 'Token:' + token : 'Key:' + key}`;
         } else {
           responseData = botInfo;
         }

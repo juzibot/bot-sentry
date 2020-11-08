@@ -193,7 +193,7 @@ export default class CommandService extends Service {
 
     const key = await ctx.service.redisService.getValue(botId);
     if (!key) {
-      return `Wrong botId[${botId}], please check it again!`;
+      return [ `Wrong botId[${botId}], please check it again!` ];
     }
     const object = await ctx.service.redisService.getValue(key);
     const baseInfo = ctx.helper.getBaseInfo(object);
