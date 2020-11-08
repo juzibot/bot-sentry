@@ -1,6 +1,6 @@
 import { Subscription } from 'egg';
 import MessageController from '../controller/message';
-import { WARN_OPTIONS, NOTIFIER } from '../../config/config';
+import { WARN_OPTIONS, NOTIFIER, QINGDUN_TOKEN_LIST, DONUT_ALERT_URL, QINGDUN_ALERT_URL } from '../../config/config';
 import { TemplateObject, BotDingDongInfo } from '../schemas/messageBO';
 import moment = require('moment');
 
@@ -93,13 +93,12 @@ class Warning extends Subscription {
     const { ctx } = this;
     const baseInfo = ctx.helper.getBaseInfoMarkdown(cacheObject);
     const warnMessage = ctx.service.commandService.warnMessageMarkdown(cacheObject, baseInfo);
-    const DONUT_ALERT_URL = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=67fe4966-77ca-4a5e-a3aa-02e30d63d536';
-    await ctx.service.reportService.sendNotification(warnMessage, DONUT_ALERT_URL);
-    // TODO check tokens which belongs to QINGDUN and report to appointed WeCom Bot
-    /* if (QINGDUN_TOKEN_LIST.includes(cacheObject.token)) {
-      const QINGDUN_ALERT_URL = 'xxxx';
+
+    if (QINGDUN_TOKEN_LIST.includes(cacheObject.token)) {
       await ctx.service.reportService.sendNotification(warnMessage, QINGDUN_ALERT_URL);
-    } */
+    } else {
+      await ctx.service.reportService.sendNotification(warnMessage, DONUT_ALERT_URL);
+    }
   }
 
 }
