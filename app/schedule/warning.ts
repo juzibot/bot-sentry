@@ -37,14 +37,12 @@ class Warning extends Subscription {
       if (cacheObject && cacheObject.botId && MessageController.type.includes(cacheObject.tokenType)) {
         num++;
         if (cacheObject.warnNum > WARN_OPTIONS.WARNING_TIMES) {
-          ctx.logger.info(`DEAD bot name: ${cacheObject.botName}, num: ${num}`);
           return;
         }
 
         // send #ding
         if (cacheObject.warnNum < WARN_OPTIONS.WARNING_TIMES) {
           activeNum++;
-          ctx.logger.info(`ACTIVE bot name: ${cacheObject.botName}, num: ${num}`);
           await ctx.service.messageService.sendMessage('#ding', key);
           cacheObject.dingNum += 1;
         }
@@ -63,9 +61,9 @@ class Warning extends Subscription {
       }
     }));
     ctx.logger.info(`
-    ==================================================
-    all bot num: ${num}, active bot num: ${activeNum}
-    ==================================================
+    ===================================================================
+    all bot num: ${num}, active bot num: ${activeNum}, dead bot num: ${num - activeNum}
+    ===================================================================
     `);
   }
 
