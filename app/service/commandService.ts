@@ -291,6 +291,9 @@ export default class CommandService extends Service {
     const { ctx } = this;
 
     const list = await ctx.service.redisService.getValue(token);
+    if (!list || list.length === 0) {
+      return `can not find wxid list by this token: ${token}, please check it again.`
+    }
 
     const strList = list.map(object => `【${object.wxid}】\nBotName: ${object.botName}\nloginTime: ${moment((object.startTime || object.loginTime) * 1000).format('MM-DD HH:mm:ss')}\n\n`);
     return strList.join('').toString();
