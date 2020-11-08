@@ -46,6 +46,14 @@ module.exports = {
     return info;
   },
 
+  getBaseInfoMarkdown(object: BotDingDongInfo) {
+    const time = object.loginTime || object.startTime;
+    const duringTime = object.responseTime === time ? '0s' : this.secondsToDhms(object.responseTime - time);
+    const ddr = this.getDDR(object);
+    const info = `> 注册时间: ${moment(object.startTime * 1000).format('MM-DD HH:mm:ss')}\n> 登录时间: ${moment(time * 1000).format('MM-DD HH:mm:ss')}\n> 在线时长: ${duringTime}\n> 最近响应时间: ${moment(object.responseTime * 1000).format('MM-DD HH:mm:ss')}\nDDR: ${ddr}%`;
+    return info;
+  },
+
   xmlToJson(xml: string): Promise<XMLObject> {
     return new Promise((resolve, reject) => {
       parseString(xml, { explicitArray: false }, (err, result: XMLObject) => {

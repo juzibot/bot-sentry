@@ -11,6 +11,7 @@ import ExportCommandService from '../../../app/service/commandService';
 import ExportMessageService from '../../../app/service/messageService';
 import ExportMonitorService from '../../../app/service/monitorService';
 import ExportRedisService from '../../../app/service/redisService';
+import ExportReportService from '../../../app/service/reportService';
 
 declare module 'egg' {
   interface IService {
@@ -19,5 +20,6 @@ declare module 'egg' {
     messageService: AutoInstanceType<typeof ExportMessageService>;
     monitorService: AutoInstanceType<typeof ExportMonitorService>;
     redisService: AutoInstanceType<typeof ExportRedisService>;
+    reportService: AutoInstanceType<typeof ExportReportService>;
   }
 }

@@ -300,4 +300,8 @@ export default class CommandService extends Service {
     return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】\nBotId: ${cacheObject.botId}\n${baseInfo}`;
   }
 
+  public warnMessageMarkdown(cacheObject: BotDingDongInfo, baseInfo: string): string {
+    return `【WARN MESSAGE(${cacheObject.botName || cacheObject.botId})】\n> BotId: ${cacheObject.botId}\n${baseInfo}`;
+  }
+
 }

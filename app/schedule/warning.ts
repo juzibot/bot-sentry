@@ -52,6 +52,7 @@ class Warning extends Subscription {
         // warning
         if (cacheObject.warnNum === WARN_OPTIONS.WARNING_TIMES) {
           await this.sendWarnMessage(cacheObject, notifierList);
+          await this.reportWarnMessage(cacheObject)
         }
 
         const diffTime = cacheObject.responseTime && Math.round(Date.now() / 1000) - cacheObject.responseTime;
@@ -86,6 +87,13 @@ class Warning extends Subscription {
         await this.ctx.service.messageService.sendTemplateMessage(object, id);
       }
     });
+  }
+
+  private async reportWarnMessage(cacheObject: BotDingDongInfo) {
+    const { ctx } = this;
+    const baseInfo = ctx.helper.getBaseInfoMarkdown(cacheObject);
+    const warnMessage = ctx.service.commandService.warnMessageMarkdown(cacheObject, baseInfo);
+    await ctx.service.reportService.sendNotification(warnMessage);
   }
 
 }
