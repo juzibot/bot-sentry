@@ -74,7 +74,9 @@ class Warning extends Subscription {
 
     notifierList.map(async (id: string) => {
       if (id === NOTIFIER.JUZI_BOT) { // for JuziBot forward this message to ALARM-ROOM
-        await ctx.service.messageService.sendMessage(warnMessage, id);
+        if (!QINGDUN_TOKEN_LIST.includes(cacheObject.token)) { // exclude QINDUN bots
+          await ctx.service.messageService.sendMessage(warnMessage, id);
+        }
       } else {
         const object: TemplateObject = {
           name: cacheObject.botName,
