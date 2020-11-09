@@ -315,7 +315,7 @@ export default class CommandService extends Service {
   }
 
   public warnMessageMarkdown(cacheObject: BotDingDongInfo, baseInfo: string): string {
-    return `【掉线报警(${cacheObject.botName || cacheObject.botId})】\n> BotId: ${cacheObject.botId}\n${baseInfo}`;
+    return `【掉线报警(${cacheObject.botName || cacheObject.botId})】\n> BotId: ${cacheObject.botId}\n${baseInfo}\n> Token: ${cacheObject.token}`;
   }
 
 }
