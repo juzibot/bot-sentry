@@ -30,6 +30,7 @@ export const NOTIFY_LIST = [
 
 export const BOT_SENTRY_NOTIFIER = 'bot_sentry_notifier';
 
+export const QINGDUN_EXTERNAL_ALERT_URL = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=ac1bf810-921c-4c4f-b3c1-a434e9196e96';
 export const QINGDUN_ALERT_URL = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c91e012a-4390-40f3-8dd1-eeb70d7977c9';
 export const DONUT_ALERT_URL = 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=67fe4966-77ca-4a5e-a3aa-02e30d63d536';
 

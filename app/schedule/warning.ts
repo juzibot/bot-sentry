@@ -1,6 +1,6 @@
 import { Subscription } from 'egg';
 import MessageController from '../controller/message';
-import { WARN_OPTIONS, NOTIFIER, QINGDUN_TOKEN_LIST, DONUT_ALERT_URL, QINGDUN_ALERT_URL } from '../../config/config';
+import { WARN_OPTIONS, NOTIFIER, QINGDUN_TOKEN_LIST, DONUT_ALERT_URL, QINGDUN_ALERT_URL, QINGDUN_EXTERNAL_ALERT_URL } from '../../config/config';
 import { TemplateObject, BotDingDongInfo } from '../schemas/messageBO';
 import moment = require('moment');
 
@@ -96,6 +96,7 @@ class Warning extends Subscription {
 
     if (QINGDUN_TOKEN_LIST.includes(cacheObject.token)) {
       await ctx.service.reportService.sendNotification(warnMessage, QINGDUN_ALERT_URL);
+      await ctx.service.reportService.sendNotification(warnMessage, QINGDUN_EXTERNAL_ALERT_URL);
     } else {
       await ctx.service.reportService.sendNotification(warnMessage, DONUT_ALERT_URL);
     }
