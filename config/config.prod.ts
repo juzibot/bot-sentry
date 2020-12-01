@@ -4,7 +4,7 @@ export default () => {
   const config: PowerPartial<EggAppConfig> = {};
   config.mongoose = {
     client: {
-      url: 'mongodb://68.79.47.251/donut',
+      url: 'mongodb://161.189.20.226/donut',
       options: { useUnifiedTopology: true },
     },
   };
