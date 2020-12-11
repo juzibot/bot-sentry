@@ -1,6 +1,6 @@
 import { Subscription } from 'egg';
 import MessageController from '../controller/message';
-import { WARN_OPTIONS, NOTIFIER, QINGDUN_TOKEN_LIST, DONUT_ALERT_URL, QINGDUN_ALERT_URL, QINGDUN_EXTERNAL_ALERT_URL } from '../../config/config';
+import { WARN_OPTIONS, NOTIFIER, DONUT_ALERT_URL } from '../../config/config';
 import { TemplateObject, BotDingDongInfo } from '../schemas/messageBO';
 import moment = require('moment');
 
@@ -74,9 +74,7 @@ class Warning extends Subscription {
 
     notifierList.map(async (id: string) => {
       if (id === NOTIFIER.JUZI_BOT) { // for JuziBot forward this message to ALARM-ROOM
-        if (!QINGDUN_TOKEN_LIST.includes(cacheObject.token)) { // exclude QINDUN bots
-          await ctx.service.messageService.sendMessage(warnMessage, id);
-        }
+        await ctx.service.messageService.sendMessage(warnMessage, id);
       } else {
         const object: TemplateObject = {
           name: cacheObject.botName,
@@ -94,12 +92,7 @@ class Warning extends Subscription {
     const baseInfo = ctx.helper.getBaseInfoMarkdown(cacheObject);
     const warnMessage = ctx.service.commandService.warnMessageMarkdown(cacheObject, baseInfo);
 
-    if (QINGDUN_TOKEN_LIST.includes(cacheObject.token)) {
-      await ctx.service.reportService.sendNotification(warnMessage, QINGDUN_ALERT_URL);
-      await ctx.service.reportService.sendNotification(warnMessage, QINGDUN_EXTERNAL_ALERT_URL);
-    } else {
-      await ctx.service.reportService.sendNotification(warnMessage, DONUT_ALERT_URL);
-    }
+    await ctx.service.reportService.sendNotification(warnMessage, DONUT_ALERT_URL);
   }
 
 }
